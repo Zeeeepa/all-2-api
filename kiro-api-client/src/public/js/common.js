@@ -79,11 +79,40 @@ function formatDate(dateStr) {
 }
 
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showToast('已复制到剪贴板', 'success');
-    }).catch(() => {
+    // 优先使用 navigator.clipboard API
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('已复制到剪贴板', 'success');
+        }).catch(() => {
+            // 如果失败，使用备用方案
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        // 不支持 clipboard API，使用备用方案
+        fallbackCopyToClipboard(text);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('已复制到剪贴板', 'success');
+        } else {
+            showToast('复制失败', 'error');
+        }
+    } catch (err) {
         showToast('复制失败', 'error');
-    });
+    }
+    document.body.removeChild(textArea);
 }
 
 // ============ 侧边栏导航 ============

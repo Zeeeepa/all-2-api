@@ -37,6 +37,15 @@
                         <span class="account-count" id="api-keys-count">共 0 个密钥</span>
                     </div>
                     <div class="content-header-right">
+                        <button class="btn btn-secondary" id="batch-create-btn">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            批量生成
+                        </button>
                         <button class="btn btn-primary" id="create-key-btn">
                             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"/>
@@ -175,6 +184,47 @@
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="limits-modal-cancel">取消</button>
                 <button class="btn btn-primary" id="limits-modal-submit">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Create Modal -->
+    <div class="modal-overlay" id="batch-create-modal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">批量生成 API 密钥</h2>
+                <button class="modal-close" id="batch-modal-close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">名称前缀 <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="batch-name-prefix" placeholder="例如: key">
+                    <p class="form-hint">生成的密钥名称格式: 前缀_序号 (如 key_1, key_2)</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">生成数量 <span class="required">*</span></label>
+                    <input type="number" class="form-input" id="batch-count" min="1" max="100" value="10" placeholder="1-100">
+                </div>
+                <div class="batch-progress" id="batch-progress" style="display: none;">
+                    <div class="progress-header">
+                        <span>生成进度</span>
+                        <span id="batch-progress-text">0/0</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="batch-progress-bar" style="width: 0%;"></div>
+                    </div>
+                    <div class="batch-results" id="batch-results" style="margin-top: 12px; max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="batch-modal-cancel">取消</button>
+                <button class="btn btn-primary" id="batch-modal-submit">开始生成</button>
+                <button class="btn btn-primary" id="batch-copy-all" style="display: none;">复制全部密钥</button>
             </div>
         </div>
     </div>

@@ -3,10 +3,13 @@
 let apiKeys = [];
 let createKeyModal;
 let limitsModal;
+let batchCreateModal;
+let batchGeneratedKeys = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     createKeyModal = document.getElementById('create-key-modal');
     limitsModal = document.getElementById('limits-modal');
+    batchCreateModal = document.getElementById('batch-create-modal');
 
     document.getElementById('sidebar-container').innerHTML = getSidebarHTML();
     initSidebar('api-keys');
@@ -35,10 +38,21 @@ function setupEventListeners() {
         if (e.target === limitsModal) closeLimitsModal();
     });
 
+    // 批量生成模态框事件
+    document.getElementById('batch-create-btn').addEventListener('click', openBatchCreateModal);
+    document.getElementById('batch-modal-close').addEventListener('click', closeBatchCreateModal);
+    document.getElementById('batch-modal-cancel').addEventListener('click', closeBatchCreateModal);
+    document.getElementById('batch-modal-submit').addEventListener('click', startBatchCreate);
+    document.getElementById('batch-copy-all').addEventListener('click', copyAllBatchKeys);
+    batchCreateModal.addEventListener('click', function(e) {
+        if (e.target === batchCreateModal) closeBatchCreateModal();
+    });
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeCreateModal();
             closeLimitsModal();
+            closeBatchCreateModal();
         }
     });
 }
@@ -75,16 +89,18 @@ function renderApiKeys() {
         const statusClass = key.isActive ? 'success' : 'error';
         const statusText = key.isActive ? '启用' : '禁用';
         const keyDisplay = key.keyValue || key.keyPrefix || '***';
+        // 转义特殊字符，防止 XSS 和语法错误
+        const escapedKey = keyDisplay.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
         // 构建限制显示
         let limitsDisplay = '<span class="usage-loading">-</span>';
 
-        return '<tr>' +
+        return '<tr data-key-value="' + escapedKey + '">' +
             '<td class="api-key-name-cell">' + key.name + '</td>' +
             '<td>' +
             '<div class="api-key-value-cell">' +
             '<span class="api-key-value">' + keyDisplay + '</span>' +
-            '<button class="api-key-copy-btn" onclick="copyApiKey(\'' + keyDisplay + '\')">' +
+            '<button class="api-key-copy-btn" data-key-id="' + key.id + '">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">' +
             '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
             '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
@@ -104,6 +120,15 @@ function renderApiKeys() {
             '</td>' +
             '</tr>';
     }).join('');
+
+    // 绑定复制按钮事件
+    document.querySelectorAll('.api-key-copy-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const row = btn.closest('tr');
+            const keyValue = row.dataset.keyValue.replace(/&quot;/g, '"');
+            copyApiKey(keyValue);
+        });
+    });
 
     // 加载用量统计
     apiKeys.forEach(function(key) {
@@ -202,7 +227,7 @@ async function deleteApiKey(id) {
     try {
         await fetch('/api/keys/' + id, {
             method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + authToken }
+          headers: { 'Authorization': 'Bearer ' + authToken }
         });
         showToast('API 密钥已删除', 'success');
         loadApiKeys();
@@ -384,4 +409,119 @@ async function saveLimits() {
     } catch (err) {
         showToast('保存失败: ' + err.message, 'error');
     }
+}
+
+// ============ 批量生成相关函数 ============
+
+function openBatchCreateModal() {
+    document.getElementById('batch-name-prefix').value = '';
+    document.getElementById('batch-count').value = '10';
+    document.getElementById('batch-progress').style.display = 'none';
+    document.getElementById('batch-results').innerHTML = '';
+    document.getElementById('batch-modal-submit').style.display = 'inline-flex';
+    document.getElementById('batch-modal-submit').disabled = false;
+    document.getElementById('batch-copy-all').style.display = 'none';
+    batchGeneratedKeys = [];
+    batchCreateModal.classList.add('active');
+}
+
+function closeBatchCreateModal() {
+    batchCreateModal.classList.remove('active');
+}
+
+async function startBatchCreate() {
+    const prefix = document.getElementById('batch-name-prefix').value.trim();
+    const count = parseInt(document.getElementById('batch-count').value) || 0;
+
+    if (!prefix) {
+        showToast('请输入名称前缀', 'error');
+        return;
+    }
+
+    if (count < 1 || count > 100) {
+        showToast('生成数量必须在 1-100 之间', 'error');
+        return;
+    }
+
+    // 显示进度条
+    document.getElementById('batch-progress').style.display = 'block';
+    document.getElementById('batch-modal-submit').disabled = true;
+    document.getElementById('batch-results').innerHTML = '';
+    batchGeneratedKeys = [];
+
+    const progressBar = document.getElementById('batch-progress-bar');
+    const progressText = document.getElementById('batch-progress-text');
+    const resultsDiv = document.getElementById('batch-results');
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 1; i <= count; i++) {
+        const keyName = prefix + '_' + i;
+        progressText.textContent = i + '/' + count;
+        progressBar.style.width = ((i / count) * 100) + '%';
+
+        try {
+            const res = await fetch('/api/keys', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                },
+                body: JSON.stringify({ name: keyName })
+            });
+
+            const result = await res.json();
+            if (result.success && result.data.key) {
+                successCount++;
+                batchGeneratedKeys.push({ name: keyName, key: result.data.key });
+                const escapedKey = result.data.key.replace(/'/g, "\\'");
+                resultsDiv.innerHTML += '<div class="batch-result-item success">' +
+                    '<span class="batch-result-name">' + keyName + '</span>' +
+                    '<span class="batch-result-key">' + result.data.key + '</span>' +
+                    '<button class="btn btn-sm" onclick="copyToClipboard(\'' + escapedKey + '\')">复制</button>' +
+                    '</div>';
+            } else {
+                failCount++;
+                resultsDiv.innerHTML += '<div class="batch-result-item error">' +
+                    '<span class="batch-result-name">' + keyName + '</span>' +
+                    '<span class="batch-result-error">' + (result.error || '创建失败') + '</span>' +
+                    '</div>';
+            }
+        } catch (err) {
+            failCount++;
+            resultsDiv.innerHTML += '<div class="batch-result-item error">' +
+                '<span class="batch-result-name">' + keyName + '</span>' +
+                '<span class="batch-result-error">' + err.message + '</span>' +
+                '</div>';
+        }
+
+        // 滚动到底部
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+    }
+
+    // 完成
+    document.getElementById('batch-modal-submit').style.display = 'none';
+    if (batchGeneratedKeys.length > 0) {
+        document.getElementById('batch-copy-all').style.display = 'inline-flex';
+    }
+
+    showToast('批量生成完成: 成功 ' + successCount + ' 个, 失败 ' + failCount + ' 个',
+        failCount === 0 ? 'success' : 'warning');
+
+    // 刷新列表
+    loadApiKeys();
+}
+
+function copyAllBatchKeys() {
+    if (batchGeneratedKeys.length === 0) {
+        showToast('没有可复制的密钥', 'error');
+        return;
+    }
+
+    const text = batchGeneratedKeys.map(function(item) {
+        return item.name + ': ' + item.key;
+    }).join('\n');
+
+    copyToClipboard(text);
 }
