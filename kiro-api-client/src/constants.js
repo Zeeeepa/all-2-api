@@ -1,0 +1,166 @@
+/**
+ * Kiro API 常量配置
+ */
+export const KIRO_CONSTANTS = {
+    // Token 刷新端点
+    REFRESH_URL: 'https://prod.{{region}}.auth.desktop.kiro.dev/refreshToken',
+    REFRESH_IDC_URL: 'https://oidc.{{region}}.amazonaws.com/token',
+    REFRESH_SSO_OIDC_URL: 'https://sso-oidc.{{region}}.amazonaws.com/token',
+
+    // API 端点
+    BASE_URL: 'https://codewhisperer.{{region}}.amazonaws.com/generateAssistantResponse',
+    AMAZON_Q_URL: 'https://codewhisperer.{{region}}.amazonaws.com/SendMessageStreaming',
+    USAGE_LIMITS_URL: 'https://q.{{region}}.amazonaws.com/getUsageLimits',
+    LIST_MODELS_URL: 'https://codewhisperer.{{region}}.amazonaws.com/ListAvailableModels',
+
+    // 默认配置
+    DEFAULT_MODEL_NAME: 'claude-sonnet-4-20250514',
+    DEFAULT_REGION: 'us-east-1',
+    AXIOS_TIMEOUT: 300000, // 5 分钟超时
+
+    // 请求头
+    USER_AGENT: 'KiroIDE',
+    KIRO_VERSION: '0.7.5',
+    CONTENT_TYPE_JSON: 'application/json',
+    ACCEPT_JSON: 'application/json',
+
+    // 认证方式
+    AUTH_METHOD_SOCIAL: 'social',
+    AUTH_METHOD_BUILDER_ID: 'builder-id',
+    AUTH_METHOD_IDC: 'IdC',
+
+    // 请求参数
+    CHAT_TRIGGER_TYPE_MANUAL: 'MANUAL',
+    ORIGIN_AI_EDITOR: 'AI_EDITOR',
+};
+
+/**
+ * 支持的模型列表
+ */
+export const KIRO_MODELS = [
+    'claude-sonnet-4-20250514',
+    'claude-sonnet-4-5-20250929',
+    'claude-3-7-sonnet-20250219',
+    'claude-opus-4-5-20251101',
+    'claude-haiku-4-5'
+];
+
+/**
+ * 模型映射表 - 将模型名称映射到 Kiro API 使用的内部名称
+ */
+export const MODEL_MAPPING = {
+    'claude-opus-4-5': 'claude-opus-4.5',
+    'claude-opus-4-5-20251101': 'claude-opus-4.5',
+    'claude-haiku-4-5': 'claude-haiku-4.5',
+    'claude-sonnet-4-5': 'CLAUDE_SONNET_4_5_20250929_V1_0',
+    'claude-sonnet-4-5-20250929': 'CLAUDE_SONNET_4_5_20250929_V1_0',
+    'claude-sonnet-4-20250514': 'CLAUDE_SONNET_4_20250514_V1_0',
+    'claude-3-7-sonnet-20250219': 'CLAUDE_3_7_SONNET_20250219_V1_0'
+};
+
+/**
+ * OAuth 配置
+ */
+export const KIRO_OAUTH_CONFIG = {
+    // Kiro Auth Service 端点 (用于 Social Auth)
+    authServiceEndpoint: 'https://prod.us-east-1.auth.desktop.kiro.dev',
+
+    // AWS SSO OIDC 端点 (用于 Builder ID)
+    ssoOIDCEndpoint: 'https://oidc.us-east-1.amazonaws.com',
+
+    // AWS Builder ID 起始 URL
+    builderIDStartURL: 'https://view.awsapps.com/start',
+
+    // 本地回调端口范围
+    callbackPortStart: 19876,
+    callbackPortEnd: 19880,
+
+    // 超时配置
+    authTimeout: 10 * 60 * 1000,  // 10 分钟
+    pollInterval: 5000,           // 5 秒
+
+    // CodeWhisperer Scopes
+    scopes: [
+        'codewhisperer:completions',
+        'codewhisperer:analysis',
+        'codewhisperer:conversations',
+        'codewhisperer:transformations',
+        'codewhisperer:taskassist'
+    ],
+
+    // 凭据存储
+    credentialsDir: '.kiro',
+    credentialsFile: 'oauth_creds.json',
+};
+
+/**
+ * 模型定价配置（美元/百万 tokens）
+ */
+export const MODEL_PRICING = {
+    // Claude Opus 4.5
+    'claude-opus-4-5-20251101': { input: 15, output: 75 },
+    'claude-opus-4.5': { input: 15, output: 75 },
+
+    // Claude Sonnet 4
+    'claude-sonnet-4-20250514': { input: 3, output: 15 },
+    'CLAUDE_SONNET_4_20250514_V1_0': { input: 3, output: 15 },
+
+    // Claude Sonnet 4.5
+    'claude-sonnet-4-5-20250929': { input: 3, output: 15 },
+    'CLAUDE_SONNET_4_5_20250929_V1_0': { input: 3, output: 15 },
+
+    // Claude 3.7 Sonnet
+    'claude-3-7-sonnet-20250219': { input: 3, output: 15 },
+    'CLAUDE_3_7_SONNET_20250219_V1_0': { input: 3, output: 15 },
+
+    // Claude 3.5 Sonnet
+    'claude-3-5-sonnet-20241022': { input: 3, output: 15 },
+    'claude-3-5-sonnet-20240620': { input: 3, output: 15 },
+
+    // Claude Haiku 4.5
+    'claude-haiku-4-5': { input: 0.80, output: 4 },
+    'claude-haiku-4.5': { input: 0.80, output: 4 },
+
+    // Claude 3.5 Haiku
+    'claude-3-5-haiku-20241022': { input: 0.80, output: 4 },
+
+    // Claude 3 Opus
+    'claude-3-opus-20240229': { input: 15, output: 75 },
+
+    // Claude 3 Sonnet
+    'claude-3-sonnet-20240229': { input: 3, output: 15 },
+
+    // Claude 3 Haiku
+    'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
+
+    // Gemini 模型定价
+    'gemini-2.5-computer-use-preview-10-2025': { input: 1.25, output: 5 },
+    'gemini-3-pro-image-preview': { input: 1.25, output: 5 },
+    'gemini-3-pro-preview': { input: 1.25, output: 5 },
+    'gemini-3-flash-preview': { input: 0.075, output: 0.30 },
+    'gemini-2.5-flash-preview': { input: 0.075, output: 0.30 },
+    'gemini-claude-sonnet-4-5': { input: 3, output: 15 },
+    'gemini-claude-sonnet-4-5-thinking': { input: 3, output: 15 },
+    'gemini-claude-opus-4-5-thinking': { input: 15, output: 75 },
+
+    // 默认定价（按 Sonnet 计算）
+    'default': { input: 3, output: 15 }
+};
+
+/**
+ * 计算 Token 费用（美元）
+ * @param {string} model - 模型名称
+ * @param {number} inputTokens - 输入 token 数
+ * @param {number} outputTokens - 输出 token 数
+ * @returns {object} { inputCost, outputCost, totalCost }
+ */
+export function calculateTokenCost(model, inputTokens, outputTokens) {
+    const pricing = MODEL_PRICING[model] || MODEL_PRICING['default'];
+    const inputCost = (inputTokens / 1000000) * pricing.input;
+    const outputCost = (outputTokens / 1000000) * pricing.output;
+    return {
+        inputCost,
+        outputCost,
+        totalCost: inputCost + outputCost
+    };
+}

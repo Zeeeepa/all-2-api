@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 密钥 - Kiro Account Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <div class="page-title-section">
+                        <div class="page-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="page-title">API 密钥</h1>
+                            <p class="page-subtitle">管理您的 API 访问密钥</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area" id="api-keys-page">
+                <div class="content-header">
+                    <div class="content-header-left">
+                        <span class="account-count" id="api-keys-count">共 0 个密钥</span>
+                    </div>
+                    <div class="content-header-right">
+                        <button class="btn btn-primary" id="create-key-btn">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            创建密钥
+                        </button>
+                    </div>
+                </div>
+
+                <div class="api-keys-table-wrapper">
+                    <table class="api-keys-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">名称</th>
+                                <th style="width: 30%;">密钥</th>
+                                <th style="width: 70px;">状态</th>
+                                <th style="width: 150px;">限制/用量</th>
+                                <th style="width: 120px;">创建时间</th>
+                    <th style="width: 120px;">最后使用</th>
+                                <th style="width: 140px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="api-keys-list"></tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                    </svg>
+                    <h3 class="empty-title">暂无 API 密钥</h3>
+                    <p class="empty-description">创建一个 API 密钥来访问 API 服务</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Key Modal -->
+    <div class="modal-overlay" id="create-key-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">创建 API 密钥</h2>
+                <button class="modal-close" id="modal-close">
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">密钥名称 <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="key-name" placeholder="例如: 生产环境密钥">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">自定义密钥 (可选)</label>
+                    <input type="text" class="form-input" id="custom-key" placeholder="留空则自动生成">
+                    <p class="form-hint">如果不填写，系统将自动生成一个安全的密钥</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modal-cancel">取消</button>
+                <button class="btn btn-primary" id="modal-submit">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Limits Config Modal -->
+    <div class="modal-overlay" id="limits-modal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 class="modal-title">配置限制 - <span id="limits-key-name"></span></h2>
+                <button class="modal-close" id="limits-modal-close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="limits-key-id">
+                <div class="limits-section">
+                    <h3 class="limits-section-title">用量限制</h3>
+                    <p class="form-hint" style="margin-bottom: 12px;">设置为 0 表示不限制</p>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">每日请求数</label>
+                            <input type="number" class="form-input" id="daily-limit" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">每月请求数</label>
+                            <input type="number" class="form-input" id="monthly-limit" min="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">总请求数</label>
+                        <input type="number" class="form-input" id="total-limit" min="0" placeholder="0">
+                    </div>
+                </div>
+                <div class="limits-section" style="margin-top: 20px;">
+                    <h3 class="limits-section-title">金额限制 (美元)</h3>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">每日费用上限</label>
+                            <input type="number" class="form-input" id="daily-cost-limit" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">每月费用上限</label>
+                            <input type="number" class="form-input" id="monthly-cost-limit" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">总费用上限</label>
+                        <input type="number" class="form-input" id="total-cost-limit" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="limits-section" style="margin-top: 20px;">
+                    <h3 class="limits-section-title">其他限制</h3>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">最大并发数</label>
+                            <input type="number" class="form-input" id="concurrent-limit" min="0" placeholder="0">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">有效期 (天)</label>
+                            <input type="number" class="form-input" id="expires-in-days" min="0" placeholder="0 = 永久">
+                        </div>
+                    </div>
+                </div>
+                <div class="limits-status" id="limits-status" style="margin-top: 20px; display: none;">
+                    <h3 class="limits-section-title">当前用量</h3>
+                    <div class="usage-grid" id="usage-grid"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="limits-modal-cancel">取消</button>
+                <button class="btn btn-primary" id="limits-modal-submit">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/js/common.js"></script>
+    <script src="/js/api-keys.js"></script>
+</body>
+</html>
