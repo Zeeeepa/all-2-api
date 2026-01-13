@@ -48,6 +48,9 @@ npm run server
 
 ### Usage Statistics
 ![Usage Statistics](https://github.com/CaiGaoQing/kiro-api-client/blob/main/usage.png?raw=true)
+
+### 交流群
+![qr](https://github.com/CaiGaoQing/kiro-api-client/blob/main/qr.jpg?raw=true)
 ### 运行测试
 
 ```bash
