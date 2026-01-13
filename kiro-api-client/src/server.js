@@ -1427,11 +1427,21 @@ app.post('/v1/messages', async (req, res) => {
 
                 console.error(`[${getTimestamp()}] [API] 错误 ${requestId} | ${streamError.message}`);
 
+                // 屏蔽特定的 403 错误消息，返回友好提示
+                let userFriendlyMessage = streamError.message;
+                if (errorStatus === 403 && (
+                    streamError.message.includes('AccessDeniedException') ||
+                    streamError.message.includes('Please run /login') ||
+                    streamError.message.includes('服务处理错误')
+                )) {
+                    userFriendlyMessage = '服务暂时不可用，请稍后重试';
+                }
+
                 if (streamStarted) {
-                    res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: streamError.message } })}\n\n`);
+                    res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: userFriendlyMessage } })}\n\n`);
                     res.end();
                 } else {
-                    res.status(errorStatus).json({ error: { type: 'api_error', message: streamError.message } });
+                    res.status(errorStatus).json({ error: { type: 'api_error', message: userFriendlyMessage } });
                 }
             }
         } else {
@@ -1506,7 +1516,17 @@ app.post('/v1/messages', async (req, res) => {
 
                 console.error(`[${getTimestamp()}] [API] 错误 ${requestId} | ${error.message}`);
 
-                res.status(errorStatus).json({ error: { type: 'api_error', message: error.message } });
+                // 屏蔽特定的 403 错误消息，返回友好提示
+                let userFriendlyMessage = error.message;
+                if (errorStatus === 403 && (
+                    error.message.includes('AccessDeniedException') ||
+                    error.message.includes('Please run /login') ||
+                    error.message.includes('服务处理错误')
+                )) {
+                    userFriendlyMessage = '服务暂时不可用，请稍后重试';
+                }
+
+                res.status(errorStatus).json({ error: { type: 'api_error', message: userFriendlyMessage } });
             }
         }
     } catch (error) {
@@ -1516,7 +1536,8 @@ app.post('/v1/messages', async (req, res) => {
         }
 
         const durationMs = Date.now() - startTime;
-        logData.statusCode = error.response?.status || error.status || 500;
+        const outerErrorStatus = error.response?.status || error.status || 500;
+        logData.statusCode = outerErrorStatus;
         logData.errorMessage = error.message;
         logData.durationMs = durationMs;
 
@@ -1527,11 +1548,21 @@ app.post('/v1/messages', async (req, res) => {
 
         console.error(`[${getTimestamp()}] [API] 错误 ${requestId} | ${error.message}`);
 
+        // 屏蔽特定的 403 错误消息，返回友好提示
+        let userFriendlyMessage = error.message;
+        if (outerErrorStatus === 403 && (
+            error.message.includes('AccessDeniedException') ||
+            error.message.includes('Please run /login') ||
+            error.message.includes('服务处理错误')
+        )) {
+            userFriendlyMessage = '服务暂时不可用，请稍后重试';
+        }
+
         if (!res.headersSent) {
-            res.status(500).json({ error: { type: 'api_error', message: error.message } });
+            res.status(outerErrorStatus).json({ error: { type: 'api_error', message: userFriendlyMessage } });
         } else {
             try {
-                res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: error.message } })}\n\n`);
+                res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: userFriendlyMessage } })}\n\n`);
                 res.end();
             } catch (e) {
                 // 忽略写入错误
