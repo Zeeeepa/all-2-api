@@ -303,9 +303,13 @@ async function loadKeyLimitsStatus(keyId) {
                     const daysLeft = remaining.days;
 
                     let expireClass = '';
-                    // 格式: M/D HH:mm
-                    const expireDateStr = (expDate.getMonth() + 1) + '/' + expDate.getDate() + ' ' +
-                        String(expDate.getHours()).padStart(2, '0') + ':' + String(expDate.getMinutes()).padStart(2, '0');
+                    // 使用 toLocaleString 确保时区正确
+                    const expireDateStr = expDate.toLocaleString('zh-CN', {
+                        month: 'numeric',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
 
                     if (isExpired) {
                         expireClass = 'danger';

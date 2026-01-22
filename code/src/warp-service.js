@@ -168,33 +168,60 @@ export function getEmailFromToken(token) {
  */
 export function refreshAccessToken(refreshToken) {
     return new Promise((resolve, reject) => {
-        
+
         const payload = JSON.stringify({
             grant_type: 'refresh_token',
             refresh_token: refreshToken
         });
-        
+
         const url = `https://securetoken.googleapis.com/v1/token?key=${FIREBASE_API_KEY}`;
-        const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY || 'http://127.0.0.1:7897';
-        
+        const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+        const isWindows = process.platform === 'win32';
+
+        // Windows 使用双引号并转义内部双引号，Unix 使用单引号
+        const escapedPayload = isWindows
+            ? `"${payload.replace(/"/g, '\\"')}"`
+            : `'${payload}'`;
+
         try {
-            // 尝试使用代理
             let result;
-            try {
-                result = execSync(`curl -s -x "${proxyUrl}" -X POST "${url}" -H "Content-Type: application/json" -d '${payload}'`, {
+
+            // 如果设置了代理，先尝试代理
+            if (proxyUrl) {
+                try {
+                    const proxyCmd = `curl -s --connect-timeout 10 --max-time 30 -x "${proxyUrl}" -X POST "${url}" -H "Content-Type: application/json" -d ${escapedPayload}`;
+                    result = execSync(proxyCmd, {
+                        encoding: 'utf8',
+                        timeout: 35000,
+                        windowsHide: true
+                    });
+                } catch (proxyError) {
+                    console.log('[Warp] 代理请求失败，尝试直连...');
+                    // 代理失败，尝试直连
+                    const directCmd = `curl -s --connect-timeout 10 --max-time 30 -X POST "${url}" -H "Content-Type: application/json" -d ${escapedPayload}`;
+                    result = execSync(directCmd, {
+                        encoding: 'utf8',
+                        timeout: 35000,
+                        windowsHide: true
+                    });
+                }
+            } else {
+                // 没有代理，直接请求
+                const directCmd = `curl -s --connect-timeout 10 --max-time 30 -X POST "${url}" -H "Content-Type: application/json" -d ${escapedPayload}`;
+                result = execSync(directCmd, {
                     encoding: 'utf8',
-                    timeout: 30000
-                });
-            } catch (proxyError) {
-                // 代理失败，尝试直连
-                result = execSync(`curl -s -X POST "${url}" -H "Content-Type: application/json" -d '${payload}'`, {
-                    encoding: 'utf8',
-                    timeout: 30000
+                    timeout: 35000,
+                    windowsHide: true
                 });
             }
-            
+
+            if (!result || result.trim() === '') {
+                reject(new Error('刷新失败: 服务器无响应'));
+                return;
+            }
+
             const json = JSON.parse(result);
-            
+
             if (json.error) {
                 reject(new Error(`刷新失败: ${json.error.message}`));
             } else {
@@ -205,7 +232,11 @@ export function refreshAccessToken(refreshToken) {
                 });
             }
         } catch (e) {
-            reject(e);
+            if (e.message && e.message.includes('ETIMEDOUT')) {
+                reject(new Error('刷新失败: 连接超时，请检查网络或代理设置'));
+            } else {
+                reject(e);
+            }
         }
     });
 }

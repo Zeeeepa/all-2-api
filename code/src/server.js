@@ -1746,7 +1746,7 @@ app.post('/v1/messages', async (req, res) => {
                     durationMs
                 });
 
-                // 屏蔽特定的 403 错误消息，返回友好提示
+                // 屏蔽特定的错误消息，返回友好提示
                 let userFriendlyMessage = streamError.message;
                 if (errorStatus === 403 && (
                     streamError.message.includes('AccessDeniedException') ||
@@ -1754,6 +1754,8 @@ app.post('/v1/messages', async (req, res) => {
                     streamError.message.includes('服务处理错误')
                 )) {
                     userFriendlyMessage = '服务暂时不可用，请稍后重试';
+                } else if (errorStatus === 400 && streamError.message.includes('ValidationException')) {
+                    userFriendlyMessage = '请求参数验证失败，请检查输入';
                 }
 
                 if (streamStarted) {
@@ -1833,7 +1835,7 @@ app.post('/v1/messages', async (req, res) => {
                 logData.errorMessage = error.message;
                 await apiLogStore.create({ ...logData, durationMs });
 
-                // 屏蔽特定的 403 错误消息，返回友好提示
+                // 屏蔽特定的错误消息，返回友好提示
                 let userFriendlyMessage = error.message;
                 if (errorStatus === 403 && (
                     error.message.includes('AccessDeniedException') ||
@@ -1841,6 +1843,8 @@ app.post('/v1/messages', async (req, res) => {
                     error.message.includes('服务处理错误')
                 )) {
                     userFriendlyMessage = '服务暂时不可用，请稍后重试';
+                } else if (errorStatus === 400 && error.message.includes('ValidationException')) {
+                    userFriendlyMessage = '请求参数验证失败，请检查输入';
                 }
 
                 res.status(errorStatus).json({ error: { type: 'api_error', message: userFriendlyMessage } });
@@ -1865,7 +1869,7 @@ app.post('/v1/messages', async (req, res) => {
             await apiLogStore.create(logData);
         }
 
-        // 屏蔽特定的 403 错误消息，返回友好提示
+        // 屏蔽特定的错误消息，返回友好提示
         let userFriendlyMessage = error.message;
         if (outerErrorStatus === 403 && (
             error.message.includes('AccessDeniedException') ||
@@ -1873,6 +1877,8 @@ app.post('/v1/messages', async (req, res) => {
             error.message.includes('服务处理错误')
         )) {
             userFriendlyMessage = '服务暂时不可用，请稍后重试';
+        } else if (outerErrorStatus === 400 && error.message.includes('ValidationException')) {
+            userFriendlyMessage = '请求参数验证失败，请检查输入';
         }
 
         if (!res.headersSent) {

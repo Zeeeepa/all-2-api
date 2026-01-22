@@ -8,372 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
-    <style>
-        .public-page {
-            min-height: 100vh;
-            background: var(--bg-primary);
-            display: flex;
-            flex-direction: column;
-        }
-        .public-header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 20px 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .public-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .public-logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-purple) 100%);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 18px;
-            color: white;
-        }
-        .public-logo-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .public-nav {
-            display: flex;
-            gap: 24px;
-        }
-        .public-nav a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color var(--transition-fast);
-        }
-        .public-nav a:hover,
-        .public-nav a.active {
-            color: var(--text-primary);
-        }
-        .public-content {
-            flex: 1;
-            padding: 40px;
-            max-width: 1100px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        .docs-header {
-            margin-bottom: 40px;
-        }
-        .docs-title {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-        }
-        .docs-subtitle {
-            font-size: 16px;
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
-        .integration-types {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .integration-card {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            text-align: center;
-        }
-        .integration-card:hover {
-            border-color: var(--accent-primary);
-            transform: translateY(-2px);
-        }
-        .integration-card.active {
-            border-color: var(--accent-primary);
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
-        }
-        .integration-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 12px;
-            background: var(--bg-tertiary);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        .integration-card.active .integration-icon {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
-        }
-        .integration-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        .integration-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .integration-content {
-            display: none;
-        }
-        .integration-content.active {
-            display: block;
-        }
-        .docs-section {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 32px;
-            margin-bottom: 24px;
-        }
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .section-title .step-number {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 700;
-            color: white;
-        }
-        .section-content {
-            color: var(--text-secondary);
-            font-size: 14px;
-            line-height: 1.8;
-        }
-        .section-content p {
-            margin-bottom: 16px;
-        }
-        .section-content ul {
-            margin: 16px 0;
-            padding-left: 24px;
-        }
-        .section-content li {
-            margin-bottom: 8px;
-        }
-        .code-block {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 20px;
-            margin: 16px 0;
-            overflow-x: auto;
-            position: relative;
-        }
-        .code-block pre {
-            margin: 0;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-primary);
-            white-space: pre;
-        }
-        .code-block .copy-btn {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            padding: 6px 12px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-        .code-block .copy-btn:hover {
-            background: var(--bg-elevated);
-            color: var(--text-primary);
-        }
-        .code-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        .endpoint-box {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin: 16px 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .endpoint-method {
-            background: var(--accent-success);
-            color: white;
-            padding: 4px 10px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .endpoint-url {
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-        .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin: 16px 0;
-            display: flex;
-            gap: 12px;
-        }
-        .info-box svg {
-            width: 20px;
-            height: 20px;
-            color: #3b82f6;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        .info-box-content {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-        .warning-box {
-            background: var(--accent-warning-bg);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin: 16px 0;
-            display: flex;
-            gap: 12px;
-        }
-        .warning-box svg {
-            width: 20px;
-            height: 20px;
-            color: var(--accent-warning);
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        .warning-box-content {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-        .model-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-        }
-        .model-table th {
-            background: var(--bg-tertiary);
-            padding: 12px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .model-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-        .model-table tr:last-child td {
-            border-bottom: none;
-        }
-        .model-name {
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            font-size: 13px;
-            color: var(--accent-primary);
-        }
-        .tab-container {
-            margin: 16px 0;
-        }
-        .tab-buttons {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            padding: 8px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-        .tab-btn:hover {
-            background: var(--bg-elevated);
-            color: var(--text-primary);
-        }
-        .tab-btn.active {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-purple));
-            border-color: transparent;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @media (max-width: 900px) {
-            .integration-types {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (max-width: 768px) {
-            .public-header {
-                padding: 16px 20px;
-                flex-direction: column;
-                gap: 16px;
-            }
-            .public-content {
-                padding: 20px;
-            }
-            .docs-section {
-                padding: 20px;
-            }
-            .endpoint-box {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .integration-types {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/docs.css">
 </head>
 <body>
     <div class="public-page">
@@ -433,7 +68,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                                 <line x1="12" y1="9" x2="12" y2="13"/>
-                                <line x1="12" y1="17" x2="12.0"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
                             </svg>
                             <div class="warning-box-content">
                                 请妥善保管您的 API 密钥，不要将其泄露给他人或提交到公开代码仓库中。
@@ -449,7 +84,7 @@
                     </h2>
                     <div class="section-content">
                         <p>我们提供两种 API 格式，您可以根据需要选择：</p>
-                      <p class="code-label">Claude API 格式</p>
+                        <p class="code-label">Claude API 格式</p>
                         <div class="endpoint-box">
                             <span class="endpoint-method">POST</span>
                             <span class="endpoint-url">{BASE_URL}/v1/messages</span>
@@ -467,7 +102,8 @@
                             </svg>
                             <div class="info-box-content">
                                 将 <code>{BASE_URL}</code> 替换为实际的服务地址，例如 <code>http://localhost:3000</code> 或您的部署域名。
-                            </div>                    </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -475,7 +111,8 @@
                     <h2 class="section-title">
                         <span class="step-number">3</span>
                         支持的模型
-                    </h2                    <div class="section-content">
+                    </h2>
+                    <div class="section-content">
                         <p>以下是当前支持的 Claude 模型列表：</p>
                         <table class="model-table">
                             <thead>
@@ -499,202 +136,10 @@
                                 </tr>
                                 <tr>
                                     <td class="model-name">claude-3-5-haiku-20241022</td>
-                                    <td>Claude 3.5 Haiku - 快速响应</td>
+                                  <td>Claude 3.5 Haiku - 快速响应</td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-
-                <div class="docs-section">
-                <h2 class="section-title">
-                        <span class="step-number">4</span>
-                        请求示例
-                    </h2>
-                    <div class="section-content">
-                        <div class="tab-container">
-                            <div class="tab-buttons">
-                                <button class="tab-btn active" data-tab="curl">cURL</button>
-                                <button class="tab-btn" data-tab="python">Python</button>
-                                <button class="tab-btn" data-tab="nodejs">Node.js</button>
-                                <button class="tab-btn" data-tab="openai">OpenAI SDK</button>
-                            </div>
-
-                            <div class="tab-content active" id="tab-curl">
-                                <p class="code-label">Claude API 格式 (cURL)</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>curl -X POST "http://localhost:3000/v1/messages" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: sk-your-api-key" \
-  -H "anthropic-version: 2023-06-01" \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "messages": [
-      {"role": "user", "content": "Hello, Claude!"}
-    ]
-  }'</pre>
-                                </div>
-                                <p class="code-label">流式响应</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>curl -X POST "http://localhost:3000/v1/messages" \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: sk-your-api-key" \
-  -H "anthropic-version: 2023-06-01" \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "stream": true,
-    "messages": [
-      {"role": "user", "content": "Hello, Claude!"}
-    ]
-  }'</pre>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="tab-python">
-                                <p class="code-label">使用 requests 库</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>import requests
-
-url = "http://localhost:3000/v1/messages"
-headers = {
-    "Content-Type": "application/json",
-    "x-api-key": "sk-your-api-key",
-    "anthropic-version": "2023-06-01"
-}
-data = {
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "messages": [
-        {"role": "user", "content": "Hello, Claude!"}
-    ]
-}
-
-response = requests.post(url, headers=headers, json=data)
-print(response.json())</pre>
-                                </div>
-                                <p class="code-label">使用 Anthropic SDK</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>from anthropic import Anthropic
-
-client = Anthropic(
-    api_key="sk-your-api-key",
-    base_url="http://localhost:3000"
-)
-
-message = client.messages.create(
-    model="claude-sonnet-4-20250514",
-    max_tokens=1024,
-    messages=[
-        {"role": "user", "content": "Hello, Claude!"}
-    ]
-)
-
-print(message.content[0].text)</pre>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="tab-nodejs">
-                                <p class="code-label">使用 fetch</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>const response = await fetch('http://localhost:3000/v1/messages', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'x-api-key': 'sk-your-api-key',
-    'anthropic-version': '2023-06-01'
-  },
-  body: JSON.stringify({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1024,
-    messages: [
-      { role: 'user', content: 'Hello, Claude!' }
-    ]
-  })
-});
-
-const data = await response.json();
-console.log(data);</pre>
-                                </div>
-                                <p class="code-label">使用 Anthropic SDK</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>utton>
-                                    <pre>import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({
-  apiKey: 'sk-your-api-key',
-  baseURL: 'http://localhost:3000'
-});
-
-const message = await client.messages.create({
-  model: 'claude-sonnet-4-20250514',
-  max_tokens: 1024,
-  messages: [
-    { role: 'user', content: 'Hello, Claude!' }
-  ]
-});
-
-console.log(message.content[0].text);</pre>
-                                </div>
-                            </div>
-
-                            <div class="tab-content" id="tab-openai">
-                                <p class="code-label">OpenAI Python SDK</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                                    <pre>from openai import OpenAI
-
-client = OpenAI(
-    api_key="sk-your-api-key",
-    base_url="http://localhost:3000/v1"
-)
-
-response = client.chat.completions.create(
-    model="gpt-4",  # 会自动映射到 Claude 模型
-    messages=[
-        {"role": "user", "content": "Hello, Claude!"}
-    ]
-)
-
-print(response.choices[0].message.content)</pre>
-                                </div>
-                                <p class="code-label">OpenAI Node.js SDK</p>
-                                <div class="code-block">
-                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                                    <pre>import OpenAI from 'openai';
-
-const client = new OpenAI({
-  apiKey: 'sk-your-api-key',
-  baseURL: 'http://localhost:3000/v1'
-});
-
-const response = await client.chat.completions.create({
-  model: 'gpt-4',  // 会自动映射到 Claude 模型
-  messages: [
-    { role: 'user', content: 'Hello, Claude!' }
-  ]
-});
-
-console.log(response.choices[0].message.content);</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="docs-section">
-                  <h2 class="section-title">
-                        <span class="step-number">5</span>
-                        查询用量
-                    </h2>
-                    <div class="section-content">
-                        <p>您可以随时通过 <a href="/pages/usage-query.html" style="color: var(--accent-primary);">用量查询页面</a> 查看您的 API 使用情况和费用统计。</p>
                     </div>
                 </div>
             </div>
@@ -707,7 +152,15 @@ console.log(response.choices[0].message.content);</pre>
                         什么是 CCswitch
                     </h2>
                     <div class="section-content">
-                        <p>CCswitch 是一个 Claude Code 代理切换工具，可以让您在使用 Claude Code 时切换到自定义的 API 端点，从而使用本服务提供的 Claude 模型。</p>
+                        <p>CCswitch 是一个 Claude Code / Codex 代理切换工具，提供可视化界面管理多个 API 供应商配置，支持一键切换不同的 API 端点。</p>
+                        <p>主要特性：</p>
+                        <ul>
+                            <li>支持 Claude Code、Codex 等多种客户端</li>
+                            <li>可视化配置管理界面</li>
+                            <li>内置多种供应商模版（DeepSeek、GLM、ModelScope 等）</li>
+                            <li>支持自定义供应商配置</li>
+                            <li>配置导入/导出，方便备份迁移</li>
+                        </ul>
                         <div class="info-box">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
@@ -727,32 +180,67 @@ console.log(response.choices[0].message.content);</pre>
                         安装 CCswitch
                     </h2>
                     <div class="section-content">
-                        <p>使用 Go 安装 CCswitch：</p>
-                        <div class="code-block">
-                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre>go install github.com/yiGmMk/ccswitch@latest</pre>
+                        <div class="tab-container">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-tab="ccswitch-go">Go Install</button>
+                                <button class="tab-btn" data-tab="ccswitch-release">下载二进制</button>
+                            </div>
+                            <div class="tab-content active" id="tab-ccswitch-go">
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre>go install github.com/yiGmMk/ccswitch@latest</pre>
+                                </div>
+                            </div>
+                            <div class="tab-content" id="tab-ccswitch-release">
+                                <p>从 GitHub Releases 下载对应平台的预编译二进制文件：</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre># 访问下载页面
+https://github.com/yiGmMk/ccswitch/releases</pre>
+                                </div>
+                            </div>
                         </div>
-                        <p>或者从 GitHub Releases 下载预编译的二进制文件。</p>
                     </div>
                 </div>
 
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">3</span>
-                        配置 CCswitch
+                        配置文件位置
                     </h2>
                     <div class="section-content">
-                        <p>创建配置文件 <code>~/.ccswitch/config.yaml</code>：</p>
-                        <div class="code-block">
-                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre># CCswitch 配置文件
-providers:
-  - name: kiro-api
-    base_url: "{BASE_URL}"
-    api_key: "sk-your-api-key"
-    default: true
-
-# 将 {BASE_URL} 替换为实际的服务地址</pre>
+                        <p>CCswitch 的配置文件存储在以下位置：</p>
+                        <table class="model-table">
+                            <thead>
+                                <tr>
+                                    <th>客户端</th>
+                                    <th>配置目录</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="model-name">CCswitch</td>
+                                    <td><code>~/.ccswitch/</code></td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">Claude Code</td>
+                                    <td><code>~/.claude/</code></td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">Codex</td>
+                                    <td><code>~/.codex/</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="info-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <div class="info-box-content">
+                                CCswitch 支持配置的导入/导出功能，方便备份和迁移到其他设备。
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -760,34 +248,108 @@ providers:
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">4</span>
-                        启动代理
+                        添加供应商配置
                     </h2>
                     <div class="section-content">
-                        <p>启动 CCswitch 代理服务：</p>
-                        <div class="code-block">
-                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre>ccswitch start</pre>
+                        <p>启动 CCswitch 后，点击【添加供应商】按钮，可以选择两种配置方式：</p>
+                        <div class="tab-container">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-tab="ccswitch-template">模版配置</button>
+                                <button class="tab-btn" data-tab="ccswitch-custom">自定义配置</button>
+                            </div>
+                            <div class="tab-content active" id="tab-ccswitch-template">
+                                <p>CCswitch 内置了多种供应商模版，选择对应模版会自动填充配置信息：</p>
+                                <ul>
+                                    <li>DeepSeek</li>
+                                    <li>GLM (智谱)</li>
+                                    <li>ModelScope (魔搭)</li>
+                                    <li>更多模版持续更新中...</li>
+                                </ul>
+                                <p>选择模版后，只需填入您的 API Key 即可完成配置。</p>
+                            </div>
+                            <div class="tab-content" id="tab-ccswitch-custom">
+                                <p>如果没有对应的供应商模版，可以选择【自定义配置】：</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre># 自定义供应商配置示例
+名称: Kiro API
+Base URL: {BASE_URL}
+API Key: sk-your-api-key</pre>
+                                </div>
+                                <p>将 <code>{BASE_URL}</code> 替换为实际的服务地址。</p>
+                            </div>
                         </div>
-                        <p>代理默认监听在 <code>127.0.0.1:8080</code>，您可以通过配置文件修改端口。</p>
+                        <div class="warning-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            <div class="warning-box-content">
+                                配置完成后点击【添加】保存，配置会显示在首页列表中。
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">5</span>
-                        配置 Claude Code
+                        启用配置
                     </h2>
                     <div class="section-content">
-                        <p>设置环境变量让 Claude Code 使用代理：</p>
-                        <div class="code-block">
-                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre># macOS/Linux
-export ANTHROPIC_BASE_URL="http://127.0.0.1:8080"
-
-# Windows PowerShell
-$env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8080"</pre>
+                        <p>在配置列表中点击【启用】按钮激活对应的供应商配置：</p>
+                        <ol>
+                            <li>在首页找到您添加的供应商配置</li>
+                            <li>点击配置项右侧的【启用】按钮</li>
+                            <li>启用成功后，根据提示重启 Claude Code</li>
+                            <li>重启后即可使用新的 API 端点</li>
+                        </ol>
+                        <div class="info-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <div class="info-box-content">
+                                您可以添加多个供应商配置，随时切换使用不同的 API 服务。
+                            </div>
                         </div>
-                        <p>然后正常启动 Claude Code 即可使用本服务。</p>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2 class="section-title">
+                        <span class="step-number">6</span>
+                        其他功能
+                    </h2>
+                    <div class="section-content">
+                        <table class="model-table">
+                            <thead>
+                                <tr>
+                                    <th>功能</th>
+                                    <th>说明</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="model-name">导入配置</td>
+                                    <td>从文件导入已有的供应商配置</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">导出配置</td>
+                                    <td>将当前配置导出为文件，方便备份迁移</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">检查更新</td>
+                                    <td>在关于页面检查 CCswitch 是否有新版本</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">更新日志</td>
+                                    <td>查看 CCswitch 的版本更新历史</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -797,13 +359,23 @@ $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8080"</pre>
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">1</span>
-                        安装 Claude CLI
+                        安装 Claude Code
                     </h2>
                     <div class="section-content">
-                        <p>首先确保您已安装 Claude CLI 工具。可以通过 npm 安装：</p>
+                        <p>Claude Code 是 Anthropic 官方的命令行工具，可以通过 npm 全局安装：</p>
                         <div class="code-block">
                             <button class="copy-btn" onclick="copyCode(this)">复制</button>
                             <pre>npm install -g @anthropic-ai/claude-code</pre>
+                        </div>
+                        <div class="info-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <div class="info-box-content">
+                                安装前请确保已安装 Node.js 18 或更高版本。可通过 <code>node -v</code> 检查版本。
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -814,16 +386,35 @@ $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:8080"</pre>
                         配置环境变量
                     </h2>
                     <div class="section-content">
-                        <p>设置 API 密钥和服务端点：</p>
-                        <div class="code-block">
-                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre># macOS/Linux - 添加到 ~/.bashrc 或 ~/.zshrc
-export ANTHROPIC_API_KEY="sk-your-api-key"
-export ANTHROPIC_BASE_URL="{BASE_URL}"
-
-# Windows PowerShell - 添加到 $PROFILE
-$env:ANTHROPIC_API_KEY = "sk-your-api-key"
+                        <p>设置 API 密钥和服务端点，使 Claude Code 连接到本服务：</p>
+                        <div class="tab-container">
+                            <div class="tab-buttons">
+                                <button class="tab-btn active" data-tab="cli-mac">macOS / Linux</button>
+                                <button class="tab-btn" data-tab="cli-win">Windows</button>
+                            </div>
+                            <div class="tab-content active" id="tab-cli-mac">
+                                <p class="code-label">添加到 ~/.bashrc 或 ~/.zshrc</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre>export ANTHROPIC_API_KEY="sk-your-api-key"
+export ANTHROPIC_BASE_URL="{BASE_URL}"</pre>
+                                </div>
+                                <p>保存后执行 <code>source ~/.bashrc</code> 或 <code>source ~/.zshrc</code> 使配置生效。</p>
+                            </div>
+                            <div class="tab-content" id="tab-cli-win">
+                                <p class="code-label">PowerShell - 添加到 $PROFILE</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre>$env:ANTHROPIC_API_KEY = "sk-your-api-key"
 $env:ANTHROPIC_BASE_URL = "{BASE_URL}"</pre>
+                                </div>
+                                <p>或者通过系统环境变量设置（永久生效）：</p>
+                                <div class="code-block">
+                                    <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                                    <pre>[System.Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-your-api-key", "User")
+[System.Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "{BASE_URL}", "User")</pre>
+                                </div>
+                            </div>
                         </div>
                         <div class="warning-box">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -841,21 +432,25 @@ $env:ANTHROPIC_BASE_URL = "{BASE_URL}"</pre>
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">3</span>
-                        使用 Claude CLI
+                        启动您的第一个会话
                     </h2>
                     <div class="section-content">
-                        <p>配置完成后，直接运行 Claude CLI：</p>
+                        <p>在任何项目目录中打开终端并启动 Claude Code：</p>
                         <div class="code-block">
                             <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                            <pre># 启动交互式会话
-claude
-
-# 或者直接发送消息
-claude "你好，请介绍一下自己"
-
-# 在项目目录中使用
-cd your-project
+                            <pre>cd /path/to/your/project
 claude</pre>
+                        </div>
+                        <p>您将看到 Claude Code 欢迎屏幕，其中包含您的会话信息、最近的对话和最新更新。</p>
+                        <div class="info-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <div class="info-box-content">
+                                输入 <code>/help</code> 查看可用命令，或输入 <code>/resume</code> 继续之前的对话。
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -863,6 +458,30 @@ claude</pre>
                 <div class="docs-section">
                     <h2 class="section-title">
                         <span class="step-number">4</span>
+                        基本使用
+                    </h2>
+                    <div class="section-content">
+                        <p>Claude Code 支持多种使用方式：</p>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">复制</button>
+                            <pre># 启动交互式会话
+claude
+
+# 直接发送消息
+claude "你好，请介绍一下自己"
+
+# 使用管道输入
+cat file.txt | claude "请分析这个文件"
+
+# 继续上一次对话
+claude --resume</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="docs-section">
+                    <h2 class="section-title">
+                        <span class="step-number">5</span>
                         常用命令
                     </h2>
                     <div class="section-content">
@@ -880,11 +499,23 @@ claude</pre>
                                 </tr>
                                 <tr>
                                     <td class="model-name">claude "message"</td>
-                                    <td>发送单条消息</td>
+                                    <td>发送单条消息并获取回复</td>
                                 </tr>
                                 <tr>
-                                    <td class="model-name">claude --help</td>
-                                    <td>查看帮助信息</td>
+                                    <td class="model-name">/help</td>
+                                    <td>查看所有可用命令</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">/resume</td>
+                                    <td>继续之前的对话</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">/clear</td>
+                                    <td>清除当前会话</td>
+                                </tr>
+                                <tr>
+                                    <td class="model-name">/login</td>
+                                    <td>重新登录或切换账户</td>
                                 </tr>
                                 <tr>
                                     <td class="model-name">claude --version</td>
@@ -940,15 +571,15 @@ claude</pre>
                             <div class="tab-content" id="tab-opencode-linux">
                                 <div class="code-block">
                                     <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                                    <pre># 下载最新版本
-curl -fsSL https://github.com/opencode-ai/opencode/releases/latest/download/opencode_linux_amd64.tar.gz | tar xz
+                        <pre># 下载最新版本
+curl -fsSL https://github.com/opcode-ai/opencode/releases/latest/download/opencode_linux_amd64.tar.gz | tar xz
 sudo mv opencode /usr/local/bin/</pre>
                                 </div>
                             </div>
                             <div class="tab-content" id="tab-opencode-go">
                                 <div class="code-block">
                                     <button class="copy-btn" onclick="copyCode(this)">复制</button>
-                          <pre>go install github.com/opencode-ai/opencode@latest</pre>
+                                    <pre>go install github.com/opencode-ai/opencode@latest</pre>
                                 </div>
                             </div>
                         </div>
@@ -1046,79 +677,6 @@ opencode</pre>
         </main>
     </div>
 
-    <script>
-        // 接入类型切换
-        document.querySelectorAll('.integration-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const type = card.dataset.type;
-
-                // 更新卡片状态
-                document.querySelectorAll('.integration-card').forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-
-                // 更新内容显示
-                document.querySelectorAll('.integration-content').forEach(c => c.classList.remove('active'));
-                document.getElementById('content-' + type).classList.add('active');
-            });
-        });
-
-        // Tab 切换
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tabId = btn.dataset.tab;
-                const container = btn.closest('.tab-container');
-
-                // 更新按钮状态
-                container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                // 更新内容显示
-                container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                container.querySelector('#tab-' + tabId).classList.add('active');
-            });
-        });
-
-        // 复制代码
-        function copyCode(btn) {
-            const codeBlock = btn.parentElement;
-            const code = codeBlock.querySelector('pre').textContent;
-
-            navigator.clipboard.writeText(code).then(() => {
-                const originalText = btn.textContent;
-                btn.textContent = '已复制!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            });
-        }
-
-        // 加载站点设置
-        (async function() {
-            // 先从缓存加载（避免闪烁）
-            const cached = localStorage.getItem('siteSettings');
-            if (cached) {
-                try {
-                    const settings = JSON.parse(cached);
-                    document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
-                    document.getElementById('logo-text').textContent = `${settings.siteName || 'Kiro'} API`;
-                    document.title = `接入教程 - ${settings.siteName || 'Kiro'} API`;
-                } catch (e) {}
-            }
-            // 再从服务器获取最新
-            try {
-                const res = await fetch('/api/site-settings');
-                const data = await res.json();
-                if (data.success && data.data) {
-                    const settings = data.data;
-                    localStorage.setItem('siteSettings', JSON.stringify(settings));
-                    document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
-                    document.getElementById('logo-text').textContent = `${settings.siteName || 'Kiro'} API`;
-                    document.title = `接入教程 - ${settings.siteName || 'Kiro'} API`;
-                }
-            } catch (e) {
-                console.error('Load site settings error:', e);
-            }
-        })();
-    </script>
+    <script src="/js/docs.js"></script>
 </body>
 </html>

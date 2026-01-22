@@ -179,9 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const now = new Date();
                 const isExpired = expDate < now;
                 const remainingDays = limits.remainingDays !== null ? limits.remainingDays : 0;
-                // 格式: YYYY/M/D HH:mm
-                const expireDateStr = expDate.getFullYear() + '/' + (expDate.getMonth() + 1) + '/' + expDate.getDate() + ' ' +
-                    String(expDate.getHours()).padStart(2, '0') + ':' + String(expDate.getMinutes()).padStart(2, '0');
+                // 使用 toLocaleString 确保时区正确
+                const expireDateStr = expDate.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
 
                 limitsHtml += `
                     <div class="limit-item">
