@@ -1,6 +1,27 @@
 // ============ 公共状态 ============
 let authToken = localStorage.getItem('authToken');
 
+// 站点设置（全局）
+window.siteSettings = {
+    siteName: 'Kiro',
+    siteLogo: 'K',
+    siteSubtitle: 'Account Manager'
+};
+
+// ============ 站点设置 ============
+async function loadSiteSettings() {
+    try {
+        const res = await fetch('/api/site-settings');
+        const data = await res.json();
+        if (data.success && data.data) {
+            window.siteSettings = data.data;
+        }
+    } catch (e) {
+        console.error('Load site settings error:', e);
+    }
+    return window.siteSettings;
+}
+
 // ============ 认证相关 ============
 async function checkAuth() {
     if (!authToken) {
@@ -147,6 +168,8 @@ function navigateTo(page) {
     const pageMap = {
         'accounts': '/pages/accounts.html',
         'gemini': '/pages/gemini.html',
+        'orchids': '/pages/orchids.html',
+        'warp': '/pages/warp.html',
         'chat': '/pages/chat.html',
         'error-accounts': '/pages/error-accounts.html',
         'api-keys': '/pages/api-keys.html',
@@ -156,6 +179,8 @@ function navigateTo(page) {
         'proxy': '/pages/proxy.html',
         'oauth': '/pages/oauth.html',
         'change-password': '/pages/change-password.html',
+        'trial-admin': '/pages/trial-admin.html',
+        'site-settings': '/pages/site-settings.html',
         'dashboard': '/pages/accounts.html',
         'rules': '/pages/accounts.html',
         'settings': '/pages/accounts.html',
@@ -167,14 +192,15 @@ function navigateTo(page) {
 
 // ============ 侧边栏 HTML 生成 ============
 function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
+    const settings = window.siteSettings || { siteName: 'Kiro', siteLogo: 'K', siteSubtitle: 'Account Manager' };
     return `
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <div class="logo-icon">K</div>
+                <div class="logo-icon">${settings.siteLogo}</div>
                 <div>
-                    <div class="logo-text">KIRO</div>
-                    <div class="logo-subtitle">Account Manager</div>
+                    <div class="logo-text">${settings.siteName.toUpperCase()}</div>
+                    <div class="logo-subtitle">${settings.siteSubtitle}</div>
                 </div>
             </div>
         </div>
@@ -197,6 +223,22 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
                     </svg>
                     Gemini 账号
                     <span class="nav-badge" id="nav-gemini-count">${stats.gemini || 0}</span>
+                </a>
+                <a href="#" class="nav-item" data-page="orchids">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                        <path d="M2 17l10 5 10-5"/>
+                        <path d="M2 12l10 5 10-5"/>
+                    </svg>
+                    Orchids 账号
+                    <span class="nav-badge" id="nav-orchids-count">${stats.orchids || 0}</span>
+                </a>
+                <a href="#" class="nav-item" data-page="warp">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                    Warp 账号
+                    <span class="nav-badge" id="nav-warp-count">${stats.warp || 0}</span>
                 </a>
                 <a href="#" class="nav-item" data-page="oauth">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -230,6 +272,14 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
                     </svg>
                     API 密钥
                 </a>
+                <a href="#" class="nav-item" data-page="trial-admin">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <polyline points="17 11 19 13 23 9"/>
+                    </svg>
+                    试用审批
+                </a>
                 <a href="#" class="nav-item" data-page="usage">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
@@ -259,6 +309,14 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
             </div>
             <div class="nav-section">
                 <div class="nav-section-title">系统设置</div>
+                <a href="#" class="nav-item" data-page="site-settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </svg>
+                    站点设置
+                </a>
                 <a href="#" class="nav-item" data-page="proxy">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
@@ -286,7 +344,7 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
                     <div class="stat-label">活跃</div>
                 </div>
             </div>
-            <div class="version-info">Kiro Manager v1.0.0</div>
+            <div class="version-info">${settings.siteName} Manager v1.0.0</div>
         </div>
     </aside>
     `;
@@ -295,24 +353,28 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
 // ============ 更新侧边栏统计 ============
 async function updateSidebarStats() {
     try {
-        const [credRes, errorRes, geminiRes] = await Promise.all([
+        const [credRes, errorRes, geminiRes, warpRes] = await Promise.all([
             fetch('/api/credentials', { headers: { 'Authorization': `Bearer ${authToken}` } }),
             fetch('/api/error-credentials', { headers: { 'Authorization': `Bearer ${authToken}` } }),
-            fetch('/api/gemini/credentials', { headers: { 'Authorization': `Bearer ${authToken}` } })
+            fetch('/api/gemini/credentials', { headers: { 'Authorization': `Bearer ${authToken}` } }),
+            fetch('/api/warp/statistics', { headers: { 'Authorization': `Bearer ${authToken}` } })
         ]);
 
         const credResult = await credRes.json();
         const errorResult = await errorRes.json();
         const geminiResult = await geminiRes.json();
+        const warpResult = await warpRes.json();
 
         const credentials = credResult.success ? credResult.data : [];
         const errors = errorResult.success ? errorResult.data : [];
         const geminiCredentials = geminiResult.success ? geminiResult.data : [];
+        const warpStats = warpResult.success ? warpResult.data : { total: 0 };
 
         const total = credentials.length;
         const active = credentials.filter(c => c.isActive).length;
         const errorCount = errors.length;
         const geminiCount = geminiCredentials.length;
+        const warpCount = warpStats.total || 0;
 
         // 更新侧边栏数字
         const totalEl = document.getElementById('stat-total');
@@ -320,16 +382,18 @@ async function updateSidebarStats() {
         const navAccountsEl = document.getElementById('nav-accounts-count');
         const navErrorEl = document.getElementById('nav-error-count');
         const navGeminiEl = document.getElementById('nav-gemini-count');
+        const navWarpEl = document.getElementById('nav-warp-count');
 
         if (totalEl) totalEl.textContent = total;
         if (activeEl) activeEl.textContent = active;
         if (navAccountsEl) navAccountsEl.textContent = total;
         if (navErrorEl) navErrorEl.textContent = errorCount;
         if (navGeminiEl) navGeminiEl.textContent = geminiCount;
+        if (navWarpEl) navWarpEl.textContent = warpCount;
 
-        return { total, active, error: errorCount, gemini: geminiCount };
+        return { total, active, error: errorCount, gemini: geminiCount, warp: warpCount };
     } catch (e) {
         console.error('Update sidebar stats error:', e);
-        return { total: 0, active: 0, error: 0, gemini: 0 };
+        return { total: 0, active: 0, error: 0, gemini: 0, warp: 0 };
     }
 }

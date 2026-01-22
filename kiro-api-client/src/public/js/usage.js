@@ -142,13 +142,14 @@ function renderKeyStats(stats) {
     const list = document.getElementById('key-stats-list');
 
     if (!stats || stats.length === 0) {
-        list.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">暂无数据</td></tr>';
+        list.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">暂无数据</td></tr>';
         return;
     }
 
     list.innerHTML = stats.map(function(stat) {
         return '<tr>' +
-            '<td><span class="key-prefix-cell">' + (stat.apiKeyPrefix || stat.apiKeyName || '-') + '</span></td>' +
+            '<td><span class="key-prefix-cell">' + (stat.apiKeyPrefix || '-') + '</span></td>' +
+            '<td>' + (stat.apiKeyName || '-') + '</td>' +
             '<td>' + formatNumber(stat.requestCount) + '</td>' +
             '<td>' + formatNumber(stat.inputTokens) + '</td>' +
             '<td>' + formatNumber(stat.outputTokens) + '</td>' +

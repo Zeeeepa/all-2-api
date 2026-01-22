@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>接入教程 - Kiro API</title>
+    <title>接入教程</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -379,11 +379,12 @@
     <div class="public-page">
         <header class="public-header">
             <div class="public-logo">
-                <div class="public-logo-icon">K</div>
-                <span class="public-logo-text">Kiro API</span>
+                <div class="public-logo-icon" id="logo-icon">K</div>
+                <span class="public-logo-text" id="logo-text">Kiro API</span>
             </div>
             <nav class="public-nav">
                 <a href="/pages/usage-query.html">用量查询</a>
+                <a href="/pages/trial-apply.html">试用申请</a>
                 <a href="/pages/docs.html" class="active">接入教程</a>
             </nav>
         </header>
@@ -1090,6 +1091,22 @@ opencode</pre>
                 }, 2000);
             });
         }
+
+        // 加载站点设置
+        (async function() {
+            try {
+                const res = await fetch('/api/site-settings');
+                const data = await res.json();
+                if (data.success && data.data) {
+                    const settings = data.data;
+                    document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
+                    document.getElementById('logo-text').textContent = `${settings.siteName || 'Kiro'} API`;
+                    document.title = `接入教程 - ${settings.siteName || 'Kiro'} API`;
+                }
+            } catch (e) {
+                console.error('Load site settings error:', e);
+            }
+        })();
     </script>
 </body>
 </html>

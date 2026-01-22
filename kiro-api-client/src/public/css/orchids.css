@@ -1,0 +1,969 @@
+/* ============================================
+   Orchids Account Manager - Professional UI/UX
+   ============================================ */
+
+/* Orchids Theme Colors */
+:root {
+    --orchids-primary: #8b5cf6;
+    --orchids-primary-light: #a78bfa;
+    --orchids-primary-dark: #7c3aed;
+    --orchids-gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+    --orchids-gradient-soft: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(236, 72, 153, 0.08) 100%);
+    --orchids-glow: rgba(139, 92, 246, 0.3);
+}
+
+/* Page Icon */
+.page-icon.orchids-icon {
+    background: var(--orchids-gradient);
+    box-shadow: 0 0 30px var(--orchids-glow);
+}
+
+/* Stats Cards */
+.orchids-stats {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.orchids-stats .stat-icon.orchids-gradient {
+    background: var(--orchids-gradient);
+}
+
+.orchids-stats .stat-icon.error {
+    background: linear-gradient(135deg, var(--accent-danger), #dc2626);
+}
+
+/* Content Toolbar */
+.content-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-color);
+}
+
+/* View Toggle */
+.view-toggle {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    gap: 4px;
+}
+
+.view-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-xs);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.view-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.view-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+}
+
+.view-btn.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Orchids Grid */
+.orchids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
+}
+
+/* Orchids Card */
+.orchids-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition-normal);
+    position: relative;
+}
+
+.orchids-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--orchids-gradient);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.orchids-card:hover {
+    border-color: var(--border-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.orchids-card:hover::before {
+    opacity: 1;
+}
+
+.orchids-card.selected {
+    border-color: var(--orchids-primary);
+    background: var(--orchids-gradient-soft);
+}
+
+.orchids-card.selected::before {
+    opacity: 1;
+}
+
+.orchids-card.active {
+    border-color: var(--accent-success);
+}
+
+.orchids-card.active::before {
+    background: linear-gradient(90deg, var(--accent-success), #34d399);
+    opacity: 1;
+}
+
+/* Card Header */
+.orchids-card-header {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 14px;
+}
+
+.orchids-card-checkbox {
+    margin-top: 4px;
+}
+
+.orchids-card-avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--orchids-gradient);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.orchids-card-avatar-status {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-card);
+}
+
+.orchids-card-avatar-status.valid {
+    background: var(--accent-success);
+}
+
+.orchids-card-avatar-status.expiring {
+    background: var(--accent-warning);
+}
+
+.orchids-card-avatar-status.error {
+    background: var(--accent-danger);
+}
+
+.orchids-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.orchids-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.orchids-card-name span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orchids-card-email {
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orchids-card-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+/* Badges */
+.orchids-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.orchids-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+.orchids-badge.active {
+    background: linear-gradient(135deg, var(--accent-success), #059669);
+    color: white;
+}
+
+.orchids-badge.valid {
+    background: var(--accent-success-bg);
+    color: var(--accent-success);
+}
+
+.orchids-badge.expiring {
+    background: var(--accent-warning-bg);
+    color: var(--accent-warning);
+}
+
+.orchids-badge.error {
+    background: var(--accent-danger-bg);
+    color: var(--accent-danger);
+}
+
+.orchids-badge.expired {
+    background: var(--accent-danger-bg);
+    color: var(--accent-danger);
+}
+
+/* Card Body */
+.orchids-card-body {
+    padding: 0 20px 16px;
+}
+
+.orchids-card-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.orchids-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.orchids-detail-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.orchids-detail-value {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orchids-detail-value.mono {
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.orchids-detail-value.success {
+    color: var(--accent-success);
+}
+
+.orchids-detail-value.warning {
+    color: var(--accent-warning);
+}
+
+.orchids-detail-value.error {
+    color: var(--accent-danger);
+}
+
+/* Card Footer */
+.orchids-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+}
+
+.orchids-card-time {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.orchids-card-time svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+}
+
+.orchids-card-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.orchids-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.orchids-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.orchids-action-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.orchids-action-btn.danger:hover {
+    background: var(--accent-danger-bg);
+    color: var(--accent-danger);
+}
+
+.orchids-action-btn.primary:hover {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--orchids-primary-light);
+}
+
+/* List View */
+.orchids-list {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.orchids-list-header {
+    display: grid;
+    grid-template-columns: 40px 2fr 1.5fr 1fr 1fr 120px;
+    gap: 16px;
+    padding: 14px 20px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.orchids-list-item {
+    display: grid;
+    grid-template-columns: 40px 2fr 1.5fr 1fr 1fr 120px;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    transition: background var(--transition-fast);
+}
+
+.orchids-list-item:last-child {
+    border-bottom: none;
+}
+
+.orchids-list-item:hover {
+    background: var(--bg-card-hover);
+}
+
+.orchids-list-item.selected {
+    background: var(--orchids-gradient-soft);
+}
+
+.orchids-list-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.orchids-list-avatar {
+    width: 36px;
+    height: 36px;
+    background: var(--orchids-gradient);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.orchids-list-info {
+    min-width: 0;
+}
+
+.orchids-list-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orchids-list-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.orchids-list-cell {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.orchids-list-cell.mono {
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.orchids-list-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+/* ============================================
+   Modal Enhancements
+   ============================================ */
+
+.orchids-modal {
+    max-width: 520px;
+}
+
+.orchids-modal.modal-lg {
+    max-width: 640px;
+}
+
+.modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modal-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--orchids-gradient);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.modal-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Form Label with Icon */
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-label svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+/* Textarea Wrapper */
+.textarea-wrapper {
+    position: relative;
+}
+
+.textarea-wrapper .form-textarea {
+    padding-right: 48px;
+}
+
+.paste-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.paste-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.paste-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-light);
+}
+
+/* Code Textarea */
+.code-textarea {
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Import Tabs */
+.import-tabs {
+    display: flex;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.import-tab {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.import-tab:hover {
+    color: var(--text-primary);
+}
+
+.import-tab.active {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Import Panels */
+.import-content {
+    position: relative;
+}
+
+.import-panel {
+    display: none;
+}
+
+.import-panel.active {
+    display: block;
+}
+
+/* Import Help */
+.import-help {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.help-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.help-title svg {
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+}
+
+.help-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.help-tag {
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    color: var(--orchids-primary-light);
+}
+
+/* ============================================
+   Detail Modal Content
+   ============================================ */
+
+.detail-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detail-section {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 16px;
+}
+
+.detail-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-section-title svg {
+    width: 16px;
+    height: 16px;
+    color: var(--orchids-primary-light);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-item.full-width {
+    grid-column: span 2;
+}
+
+.detail-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.detail-value.mono {
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.detail-value.success {
+    color: var(--accent-success);
+}
+
+.detail-value.warning {
+    color: var(--accent-warning);
+}
+
+.detail-value.error {
+    color: var(--accent-danger);
+}
+
+/* Status Indicator */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.status-indicator.valid {
+    background: var(--accent-success-bg);
+    color: var(--accent-success);
+}
+
+.status-indicator.expiring {
+    background: var(--accent-warning-bg);
+    color: var(--accent-warning);
+}
+
+.status-indicator.error {
+    background: var(--accent-danger-bg);
+    color: var(--accent-danger);
+}
+
+.status-indicator svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   Empty & Loading States
+   ============================================ */
+
+.empty-illustration {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 24px;
+    color: var(--orchids-primary);
+    opacity: 0.5;
+}
+
+.empty-illustration svg {
+    width: 100%;
+    height: 100%;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+}
+
+.loading-spinner.large {
+    width: 48px;
+    height: 48px;
+    border-width: 3px;
+    border-top-color: var(--orchids-primary);
+}
+
+.loading-text {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes cardFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.orchids-card {
+    animation: cardFadeIn 0.3s ease forwards;
+}
+
+.orchids-card:nth-child(1) { animation-delay: 0.05s; }
+.orchids-card:nth-child(2) { animation-delay: 0.1s; }
+.orchids-card:nth-child(3) { animation-delay: 0.15s; }
+.orchids-card:nth-child(4) { animation-delay: 0.2s; }
+.orchids-card:nth-child(5) { animation-delay: 0.25s; }
+.orchids-card:nth-child(6) { animation-delay: 0.3s; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.orchids-card.testing {
+    position: relative;
+}
+
+.orchids-card.testing::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--orchids-gradient-soft);
+    border-radius: inherit;
+    animation: pulse 1.5s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .orchids-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .orchids-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+
+    .orchids-list-header,
+    .orchids-list-item {
+        grid-template-columns: 40px 2fr 1fr 100px;
+    }
+
+    .orchids-list-header > *:nth-child(3),
+    .orchids-list-item > *:nth-child(3),
+    .orchids-list-header > *:nth-child(5),
+    .orchids-list-item > *:nth-child(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .orchids-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .orchids-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content-toolbar {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .orchids-card-details {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-item.full-width {
+        grid-column: span 1;
+    }
+
+    .orchids-modal,
+    .orchids-modal.modal-lg {
+        max-width: 95%;
+    }
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+.text-orchids {
+    color: var(--orchids-primary-light);
+}
+
+.bg-orchids {
+    background: var(--orchids-gradient);
+}
+
+.border-orchids {
+    border-color: var(--orchids-primary);
+}
+
+.glow-orchids {
+    box-shadow: 0 0 20px var(--orchids-glow);
+}

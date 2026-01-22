@@ -99,16 +99,17 @@ function renderApiKeys() {
             '<td class="api-key-name-cell">' + key.name + '</td>' +
             '<td>' +
             '<div class="api-key-value-cell">' +
-            '<span class="api-key-value">' + keyDisplay + '</span>' +
+            '<span class="api-key-value" style="font-size: 12px;">' + keyDisplay + '</span>' +
             '<button class="api-key-copy-btn" data-key-id="' + key.id + '">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">' +
             '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
             '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>' +
-            '</svg> 复制</button>' +
+            '</svg></button>' +
             '</div>' +
             '</td>' +
             '<td><span class="logs-status-badge ' + statusClass + '">' + statusText + '</span></td>' +
             '<td class="api-key-limits" data-key-id="' + key.id + '">' + limitsDisplay + '</td>' +
+            '<td class="api-key-expire" data-key-id="' + key.id + '">-</td>' +
             '<td>' + formatDateTime(key.createdAt) + '</td>' +
             '<td>' + (key.lastUsedAt ? formatDateTime(key.lastUsedAt) : '从未使用') + '</td>' +
             '<td>' +
@@ -249,9 +250,11 @@ async function loadKeyLimitsStatus(keyId) {
         });
         const result = await res.json();
         if (result.success && result.data) {
+            const { limits, usage, remaining, expireDate } = result.data;
             const cell = document.querySelector('.api-key-limits[data-key-id="' + keyId + '"]');
+            const expireCell = document.querySelector('.api-key-expire[data-key-id="' + keyId + '"]');
+
             if (cell) {
-                const { limits, usage } = result.data;
                 let html = '<div class="limits-mini">';
 
                 // 显示今日用量
@@ -289,6 +292,34 @@ async function loadKeyLimitsStatus(keyId) {
 
                 html += '</div>';
                 cell.innerHTML = html;
+            }
+
+            // 显示过期时间到单独的列
+            if (expireCell) {
+                if (expireDate) {
+                    const expDate = new Date(expireDate);
+                    const now = new Date();
+                    const isExpired = expDate < now;
+                    const daysLeft = remaining.days;
+
+                    let expireClass = '';
+                    // 格式: M/D HH:mm
+                    const expireDateStr = (expDate.getMonth() + 1) + '/' + expDate.getDate() + ' ' +
+                        String(expDate.getHours()).padStart(2, '0') + ':' + String(expDate.getMinutes()).padStart(2, '0');
+
+                    if (isExpired) {
+                        expireClass = 'danger';
+                    } else if (daysLeft <= 3) {
+                        expireClass = 'danger';
+                    } else if (daysLeft <= 7) {
+                        expireClass = 'warning';
+                    }
+
+                    expireCell.innerHTML = '<span class="limit-value ' + expireClass + '" title="剩余 ' + daysLeft + ' 天">' +
+                        (isExpired ? '已过期' : expireDateStr) + '</span>';
+                } else {
+                    expireCell.innerHTML = '<span class="limit-value" style="color: var(--text-muted);">永久</span>';
+                }
             }
         }
     } catch (err) {

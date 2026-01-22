@@ -945,7 +945,7 @@ body {
     overflow: hidden;
 }
 
-.api-keys-table, .logs-table { width: 100%; border-collapse: collapse; }
+.api-keys-table, .logs-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
 .api-keys-table th, .logs-table th {
     background: var(--bg-tertiary);
@@ -983,6 +983,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    max-width: 100px;
 }
 
 .api-key-copy-btn {
@@ -1791,6 +1792,10 @@ body {
 
 .limit-value.warning {
     color: var(--accent-warning);
+}
+
+.limit-value.danger {
+    color: var(--accent-danger);
 }
 
 .limits-section-title {

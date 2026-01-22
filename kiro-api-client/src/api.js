@@ -52,7 +52,7 @@ function createAxiosInstance(credential) {
             'Content-Type': KIRO_CONSTANTS.CONTENT_TYPE_JSON,
             'Accept': KIRO_CONSTANTS.ACCEPT_JSON,
             'amz-sdk-request': 'attempt=1; max=1',
-            'x-amzn-kiro-agent-mode': 'vibe',
+            'x-amzn-kiro-agent-mode': 'spec',
             'x-amz-user-agent': `aws-sdk-js/1.0.0 KiroIDE-${kiroVersion}-${machineId}`,
             'user-agent': `aws-sdk-js/1.0.0 ua/2.1 os/${osName} lang/js md/nodejs#${nodeVersion} api/codewhispererruntime#1.0.0 m/E KiroIDE-${kiroVersion}-${machineId}`,
             'Connection': 'close'
@@ -119,10 +119,8 @@ export class KiroAPI {
                     return { success: false, error: `${authMethod} 认证需要 clientId 和 clientSecret` };
                 }
 
-                // IdC 使用 sso-oidc 端点，builder-id 使用 oidc 端点
-                const url = authMethod === KIRO_CONSTANTS.AUTH_METHOD_IDC
-                    ? KIRO_CONSTANTS.REFRESH_SSO_OIDC_URL.replace('{{region}}', region)
-                    : KIRO_CONSTANTS.REFRESH_IDC_URL.replace('{{region}}', region);
+                // IdC 和 builder-id 都使用 oidc 端点 (与 kiro2api 保持一致)
+                const url = KIRO_CONSTANTS.REFRESH_IDC_URL.replace('{{region}}', region);
                 log.request('POST', url);
 
                 // 调试日志：打印请求参数（脱敏）

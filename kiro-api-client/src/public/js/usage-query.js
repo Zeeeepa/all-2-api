@@ -174,11 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
 
-            if (limits.expiresInDays > 0 && limits.remainingDays !== null) {
+            if (limits.expiresInDays > 0 && limits.expireDate) {
+                const expDate = new Date(limits.expireDate);
+                const now = new Date();
+                const isExpired = expDate < now;
+                const remainingDays = limits.remainingDays !== null ? limits.remainingDays : 0;
+                // 格式: YYYY/M/D HH:mm
+                const expireDateStr = expDate.getFullYear() + '/' + (expDate.getMonth() + 1) + '/' + expDate.getDate() + ' ' +
+                    String(expDate.getHours()).padStart(2, '0') + ':' + String(expDate.getMinutes()).padStart(2, '0');
+
                 limitsHtml += `
                     <div class="limit-item">
-                        <span class="limit-label">剩余有效期</span>
-                        <span class="limit-value ${limits.remainingDays <= 7 ? 'danger' : limits.remainingDays <= 30 ? 'warning' : ''}">${limits.remainingDays} 天</span>
+                        <span class="limit-label">过期时间</span>
+                        <span class="limit-value ${isExpired ? 'danger' : remainingDays <= 7 ? 'danger' : remainingDays <= 30 ? 'warning' : ''}">${isExpired ? '已过期' : expireDateStr}</span>
+                    </div>
+                    <div class="limit-item">
+                        <span class="limit-label">剩余天数</span>
+                        <span class="limit-value ${isExpired ? 'danger' : remainingDays <= 7 ? 'danger' : remainingDays <= 30 ? 'warning' : ''}">${isExpired ? '0' : remainingDays} 天</span>
                     </div>
                 `;
             }

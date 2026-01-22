@@ -82,7 +82,7 @@ export class KiroClient {
                 'Content-Type': KIRO_CONSTANTS.CONTENT_TYPE_JSON,
                 'Accept': KIRO_CONSTANTS.ACCEPT_JSON,
                 'amz-sdk-request': 'attempt=1; max=1',
-                'x-amzn-kiro-agent-mode': 'vibe',
+                'x-amzn-kiro-agent-mode': 'spec',
                 'x-amz-user-agent': `aws-sdk-js/1.0.0 KiroIDE-${kiroVersion}-${machineId}`,
                 'user-agent': `aws-sdk-js/1.0.0 ua/2.1 os/${osName} lang/js md/nodejs#${nodeVersion} api/codewhispererruntime#1.0.0 m/E KiroIDE-${kiroVersion}-${machineId}`,
                 'Connection': 'close'
@@ -535,6 +535,11 @@ export class KiroClient {
             assistantResponseMessage.content = this._getContentText(msg);
         }
 
+        // Kiro API 要求 content 不能为空
+        if (!assistantResponseMessage.content) {
+            assistantResponseMessage.content = toolUses.length > 0 ? 'Tool calls executed.' : 'Continue';
+        }
+
         // 只添加非空字段
         if (toolUses.length > 0) {
             assistantResponseMessage.toolUses = toolUses;
@@ -549,12 +554,33 @@ export class KiroClient {
     _getContentText(message) {
         if (!message) return '';
         if (typeof message === 'string') return message;
+        // 处理直接传入数组的情况（如 tool_result 的 content）
+        if (Array.isArray(message)) {
+            return message
+                .map(part => {
+                    if (typeof part === 'string') return part;
+                    if (part.type === 'text' && part.text) return part.text;
+                    if (typeof part.text === 'string') return part.text;
+                    return '';
+                })
+                .filter(Boolean)
+                .join('');
+        }
         if (typeof message.content === 'string') return message.content;
         if (Array.isArray(message.content)) {
             return message.content
                 .filter(part => part.type === 'text' && part.text)
                 .map(part => part.text)
                 .join('');
+        }
+        // 避免返回 [object Object]
+        if (typeof message === 'object') {
+            if (message.text) return message.text;
+            try {
+                return JSON.stringify(message);
+            } catch {
+                return '';
+            }
         }
         return String(message.content || message);
     }
@@ -740,15 +766,59 @@ export class KiroClient {
     }
 
     /**
-     * 检查是否为可重试的 ValidationException
+     * 检查是否为 ValidationException
      * @private
      */
-    _isRetryableValidationException(error) {
+    _isValidationException(error) {
+        // 检查 header 中的错误类型
         const errorType = error.response?.headers?.['x-amzn-errortype'] || '';
+        if (errorType.includes('ValidationException')) {
+            return true;
+        }
+
+        // 检查 error.message
+        if (error.message && error.message.includes('ValidationException')) {
+            return true;
+        }
+
+        // 检查 response.data
         const responseData = error.response?.data;
-        return errorType.includes('ValidationException') ||
-            (typeof responseData === 'string' && responseData.includes('ValidationException')) ||
-            (responseData?.error?.message?.includes('ValidationException'));
+        if (responseData) {
+            if (typeof responseData === 'string' && responseData.includes('ValidationException')) {
+                return true;
+            }
+            if (Buffer.isBuffer(responseData) && responseData.toString('utf8').includes('ValidationException')) {
+                return true;
+            }
+            if (typeof responseData === 'object') {
+                try {
+                    const dataStr = JSON.stringify(responseData);
+                    if (dataStr.includes('ValidationException')) {
+                        return true;
+                    }
+                } catch {
+                    // 忽略序列化错误
+                }
+                // 检查嵌套的 error 对象
+                if (responseData.error?.message?.includes('ValidationException')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 检查是否为上下文超限的 ValidationException（不应重试）
+     * @private
+     */
+    _isContextLimitException(error) {
+        if (!this._isValidationException(error)) {
+            return false;
+        }
+        // ValidationException 通常是上下文超限导致的，不应重试
+        return true;
     }
 
     /**
@@ -774,12 +844,18 @@ export class KiroClient {
                 }
             }
         }
-        log.error(`原始错误: ${status} - ${originalError}`);
+
+        // ValidationException 使用 debug 级别，不输出到控制台
+        if (this._isValidationException(error)) {
+            log.debug(`原始错误: ${status} - ${originalError}`);
+        } else {
+            log.error(`原始错误: ${status} - ${originalError}`);
+        }
 
         // 返回自定义错误消息
         if (status === 400) {
-            if (this._isRetryableValidationException(error)) {
-                return '服务暂时不可用，请稍后重试';
+            if (this._isContextLimitException(error)) {
+                return '上下文超出限制，请恢复对话重试，或重新打开对话';
             }
             return '请求参数错误';
         }
@@ -813,14 +889,6 @@ export class KiroClient {
             if (status === 429 && retryCount < this.maxRetries) {
                 const delay = this.baseDelay * Math.pow(2, retryCount);
                 log.warn(`收到 429，${delay}ms 后重试... (${retryCount + 1}/${this.maxRetries})`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return this._callWithRetry(requestFn, retryCount + 1, hasRefreshed);
-            }
-
-            // 400 ValidationException - 重试（AWS 临时性验证错误）
-            if (status === 400 && retryCount < this.maxRetries && this._isRetryableValidationException(error)) {
-                const delay = this.baseDelay * Math.pow(2, retryCount);
-                log.warn(`收到 400 ValidationException，${delay}ms 后重试... (${retryCount + 1}/${this.maxRetries})`);
                 await new Promise(resolve => setTimeout(resolve, delay));
                 return this._callWithRetry(requestFn, retryCount + 1, hasRefreshed);
             }
@@ -990,15 +1058,6 @@ export class KiroClient {
             if (status === 429 && retryCount < this.maxRetries) {
                 const delay = this.baseDelay * Math.pow(2, retryCount);
                 log.warn(`流式请求收到 429，${delay}ms 后重试... (${retryCount + 1}/${this.maxRetries})`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                yield* this.chatStream(messages, model, options, retryCount + 1);
-                return;
-            }
-
-            // 400 ValidationException - 重试（AWS 临时性验证错误）
-            if (status === 400 && retryCount < this.maxRetries && this._isRetryableValidationException(error)) {
-                const delay = this.baseDelay * Math.pow(2, retryCount);
-                log.warn(`流式请求收到 400 ValidationException，${delay}ms 后重试... (${retryCount + 1}/${this.maxRetries})`);
                 await new Promise(resolve => setTimeout(resolve, delay));
                 yield* this.chatStream(messages, model, options, retryCount + 1);
                 return;

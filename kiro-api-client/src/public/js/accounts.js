@@ -454,24 +454,6 @@ function renderCards() {
     cardsGrid.querySelectorAll('.account-card').forEach(function(card) {
         const id = parseInt(card.dataset.id);
 
-        // 卡片点击进入详情页
-        card.addEventListener('click', function(e) {
-            // 如果点击的是按钮、复选框或其他交互元素，不跳转
-            if (e.target.closest('.card-checkbox') ||
-                e.target.closest('.card-action-btn') ||
-                e.target.closest('.copy-btn') ||
-                e.target.closest('.btn-refresh-usage') ||
-                e.target.closest('.btn-refresh-token') ||
-                e.target.closest('button') ||
-                e.target.closest('input')) {
-                return;
-            }
-            window.location.href = '/pages/account-detail.html?id=' + id;
-        });
-
-        // 添加鼠标样式
-        card.style.cursor = 'pointer';
-
         card.querySelector('.card-checkbox input').addEventListener('change', function(e) {
             e.stopPropagation();
             if (e.target.checked) {

@@ -8,20 +8,11 @@ services:
     build: .
     container_name: kiro-api
     restart: unless-stopped
-    ports:
-      - "${PORT:-13003}:13003"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    network_mode: host
     environment:
-      - PORT=13003
-      - MYSQL_HOST=${MYSQL_HOST}
+      - PORT=${PORT:-13003}
+      - MYSQL_HOST=${MYSQL_HOST:-127.0.0.1}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
-      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_USER=${MYSQL_USER:-root}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-kiro_api}
-    networks:
-      - kiro-network
-
-networks:
-  kiro-network:
-    driver: bridge

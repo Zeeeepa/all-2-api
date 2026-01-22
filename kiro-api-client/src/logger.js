@@ -132,9 +132,6 @@ export function createLogger(module) {
             if (enabled && currentLevel <= LogLevel.DEBUG) {
                 const message = formatArgs(args);
                 writeToFile(module, 'DEBUG', message);
-                if (consoleOutput) {
-                    console.log(`[${getTimestamp()}] ${prefix} [DEBUG]`, ...args);
-                }
             }
         },
 
@@ -142,9 +139,6 @@ export function createLogger(module) {
             if (enabled && currentLevel <= LogLevel.INFO) {
                 const message = formatArgs(args);
                 writeToFile(module, 'INFO', message);
-                if (consoleOutput) {
-                    console.log(`[${getTimestamp()}] ${prefix} [INFO]`, ...args);
-                }
             }
         },
 
@@ -152,9 +146,6 @@ export function createLogger(module) {
             if (enabled && currentLevel <= LogLevel.WARN) {
                 const message = formatArgs(args);
                 writeToFile(module, 'WARN', message);
-                if (consoleOutput) {
-                    console.warn(`[${getTimestamp()}] ${prefix} [WARN]`, ...args);
-                }
             }
         },
 
@@ -199,9 +190,6 @@ export function createLogger(module) {
         curl(method, url, headers, data) {
             const curlCmd = buildCurlCommand(method, url, headers, data);
             this.info(`CURL:\n${curlCmd}`);
-            if (consoleOutput) {
-                console.log(`\n${'='.repeat(80)}\n${curlCmd}\n${'='.repeat(80)}\n`);
-            }
         }
     };
 }

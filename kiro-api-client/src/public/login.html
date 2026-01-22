@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiro - 登录</title>
+    <title>登录</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -190,8 +190,8 @@
     <div class="login-container">
         <div class="login-card">
             <div class="logo">
-                <div class="logo-icon">K</div>
-                <div class="logo-text">KIRO</div>
+                <div class="logo-icon" id="logo-icon">K</div>
+                <div class="logo-text" id="logo-text">KIRO</div>
             </div>
 
             <h1 class="login-title" id="page-title">登录</h1>
@@ -224,6 +224,22 @@
     <script>
         let isSetupMode = false;
 
+        // 加载站点设置
+        async function loadSiteSettings() {
+            try {
+                const res = await fetch('/api/site-settings');
+                const data = await res.json();
+                if (data.success && data.data) {
+                    const settings = data.data;
+                    document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
+                    document.getElementById('logo-text').textContent = (settings.siteName || 'Kiro').toUpperCase();
+                    document.title = `${settings.siteName || 'Kiro'} - 登录`;
+                }
+            } catch (e) {
+                console.error('Load site settings error:', e);
+            }
+        }
+
         // 检查登录状态和系统状态
         async function checkStatus() {
             // 检查是否已登录
@@ -234,7 +250,7 @@
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (res.ok) {
-                        window.location.href = '/';
+                        window.location.href = '/pages/accounts.html';
                         return;
                     }
                     localStorage.removeItem('authToken');
@@ -310,7 +326,7 @@
                     localStorage.setItem('authToken', data.data.token);
                     localStorage.setItem('username', data.data.username);
                     localStorage.setItem('isAdmin', data.data.isAdmin);
-                    window.location.href = '/';
+                    window.location.href = '/pages/accounts.html';
                 } else {
                     showError(data.error || '操作失败');
                 }
@@ -323,6 +339,7 @@
         });
 
         checkStatus();
+        loadSiteSettings();
     </script>
 </body>
 </html>

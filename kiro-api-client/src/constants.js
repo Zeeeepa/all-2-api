@@ -10,7 +10,7 @@ export const KIRO_CONSTANTS = {
     // API 端点
     BASE_URL: 'https://codewhisperer.{{region}}.amazonaws.com/generateAssistantResponse',
     AMAZON_Q_URL: 'https://codewhisperer.{{region}}.amazonaws.com/SendMessageStreaming',
-    USAGE_LIMITS_URL: 'https://q.{{region}}.amazonaws.com/getUsageLimits',
+    USAGE_LIMITS_URL: 'https://codewhisperer.{{region}}.amazonaws.com/getUsageLimits',
     LIST_MODELS_URL: 'https://codewhisperer.{{region}}.amazonaws.com/ListAvailableModels',
 
     // 默认配置
@@ -49,13 +49,18 @@ export const KIRO_MODELS = [
  * 模型映射表 - 将模型名称映射到 Kiro API 使用的内部名称
  */
 export const MODEL_MAPPING = {
-    'claude-opus-4-5': 'claude-opus-4.5',
-    'claude-opus-4-5-20251101': 'claude-opus-4.5',
-    'claude-haiku-4-5': 'claude-haiku-4.5',
+    // Sonnet 系列 (与 kiro2api 一致)
     'claude-sonnet-4-5': 'CLAUDE_SONNET_4_5_20250929_V1_0',
     'claude-sonnet-4-5-20250929': 'CLAUDE_SONNET_4_5_20250929_V1_0',
     'claude-sonnet-4-20250514': 'CLAUDE_SONNET_4_20250514_V1_0',
-    'claude-3-7-sonnet-20250219': 'CLAUDE_3_7_SONNET_20250219_V1_0'
+    'claude-3-7-sonnet-20250219': 'CLAUDE_3_7_SONNET_20250219_V1_0',
+    // Haiku 系列 (与 kiro2api 一致，使用 auto)
+    'claude-3-5-haiku-20241022': 'auto',
+    'claude-haiku-4-5-20251001': 'auto',
+    'claude-haiku-4-5': 'auto',
+    // Opus 系列
+    'claude-opus-4-5': 'claude-opus-4.5',
+    'claude-opus-4-5-20251101': 'claude-opus-4.5'
 };
 
 /**
