@@ -175,19 +175,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (limits.expiresInDays > 0 && limits.expireDate) {
+                // 直接显示原始时间字符串，不做时区转换
+                let expireDateStr = limits.expireDate;
+                // 如果是 ISO 格式 (2026-01-21T14:40:20.000Z)，转换为本地格式显示
+                if (expireDateStr.includes('T')) {
+                    expireDateStr = expireDateStr.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+                }
+                // 格式化为 YYYY/MM/DD HH:mm:ss
+                expireDateStr = expireDateStr.replace(/-/g, '/');
+
                 const expDate = new Date(limits.expireDate);
                 const now = new Date();
                 const isExpired = expDate < now;
                 const remainingDays = limits.remainingDays !== null ? limits.remainingDays : 0;
-                // 使用 toLocaleString 确保时区正确
-                const expireDateStr = expDate.toLocaleString('zh-CN', {
-                    year: 'numeric',
-                    month: 'numeric',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
 
                 limitsHtml += `
                     <div class="limit-item">

@@ -303,14 +303,20 @@ async function loadKeyLimitsStatus(keyId) {
                     const daysLeft = remaining.days;
 
                     let expireClass = '';
-                    // 使用 toLocaleString 确保时区正确
-                    const expireDateStr = expDate.toLocaleString('zh-CN', {
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    });
+                    // 直接显示原始时间字符串，不做时区转换
+                    let expireDateStr = expireDate;
+                    // 如果是 ISO 格式 (2026-01-21T14:40:20.000Z)，转换为本地格式显示
+                    if (expireDateStr.includes('T')) {
+                        expireDateStr = expireDateStr.replace('T', ' ').replace(/\.\d{3}Z$/, '');
+                    }
+                    // 格式化为 MM/DD HH:mm:ss
+                    const parts = expireDateStr.split(' ');
+                    if (parts.length === 2) {
+                        const dateParts = parts[0].split('-');
+                        if (dateParts.length === 3) {
+                            expireDateStr = dateParts[1] + '/' + dateParts[2] + ' ' + parts[1];
+                        }
+                    }
 
                     if (isExpired) {
                         expireClass = 'danger';
