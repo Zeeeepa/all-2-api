@@ -500,11 +500,23 @@
 
         // 加载站点设置
         (async function() {
+            // 先从缓存加载（避免闪烁）
+            const cached = localStorage.getItem('siteSettings');
+            if (cached) {
+                try {
+                    const settings = JSON.parse(cached);
+                    document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
+                    document.getElementById('logo-text').textContent = `${settings.siteName || 'Kiro'} API`;
+                    document.title = `查询申请状态 - ${settings.siteName || 'Kiro'} API`;
+                } catch (e) {}
+            }
+            // 再从服务器获取最新
             try {
                 const res = await fetch('/api/site-settings');
                 const data = await res.json();
                 if (data.success && data.data) {
                     const settings = data.data;
+                    localStorage.setItem('siteSettings', JSON.stringify(settings));
                     document.getElementById('logo-icon').textContent = settings.siteLogo || 'K';
                     document.getElementById('logo-text').textContent = `${settings.siteName || 'Kiro'} API`;
                     document.title = `查询申请状态 - ${settings.siteName || 'Kiro'} API`;

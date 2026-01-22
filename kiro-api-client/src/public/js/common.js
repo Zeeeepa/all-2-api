@@ -1,8 +1,8 @@
 // ============ 公共状态 ============
 let authToken = localStorage.getItem('authToken');
 
-// 站点设置（全局）
-window.siteSettings = {
+// 站点设置（全局）- 先尝试从 localStorage 读取缓存
+window.siteSettings = JSON.parse(localStorage.getItem('siteSettings')) || {
     siteName: 'Kiro',
     siteLogo: 'K',
     siteSubtitle: 'Account Manager'
@@ -15,11 +15,59 @@ async function loadSiteSettings() {
         const data = await res.json();
         if (data.success && data.data) {
             window.siteSettings = data.data;
+            // 缓存到 localStorage
+            localStorage.setItem('siteSettings', JSON.stringify(data.data));
+            // 更新页面上的站点信息
+            updateSiteSettingsUI();
         }
     } catch (e) {
         console.error('Load site settings error:', e);
     }
     return window.siteSettings;
+}
+
+// 更新页面上所有使用站点设置的元素
+function updateSiteSettingsUI() {
+    const settings = window.siteSettings;
+
+    // 更新页面 title（替换 Kiro 为配置的站点名称）
+    const currentTitle = document.title;
+    if (currentTitle.includes('Kiro')) {
+        document.title = currentTitle.replace(/Kiro/g, settings.siteName);
+    } else if (!currentTitle.includes(settings.siteName)) {
+        // 如果 title 不包含站点名称，追加
+        const pageName = currentTitle.split(' - ')[0] || currentTitle;
+        document.title = `${pageName} - ${settings.siteName} ${settings.siteSubtitle}`;
+    }
+
+    // 更新侧边栏 logo
+    const logoIcon = document.querySelector('.sidebar .logo-icon');
+    const logoText = document.querySelector('.sidebar .logo-text');
+    const logoSubtitle = document.querySelector('.sidebar .logo-subtitle');
+
+    if (logoIcon) logoIcon.textContent = settings.siteLogo;
+    if (logoText) logoText.textContent = settings.siteName.toUpperCase();
+    if (logoSubtitle) logoSubtitle.textContent = settings.siteSubtitle;
+
+    // 更新版本信息
+    const versionInfo = document.querySelector('.version-info');
+    if (versionInfo) versionInfo.textContent = `${settings.siteName} Manager v1.0.0`;
+
+    // 更新导航中的账号文字
+    const kiroNavItem = document.querySelector('.nav-item[data-page="accounts"]');
+    if (kiroNavItem) {
+        const badge = kiroNavItem.querySelector('.nav-badge');
+        const badgeHTML = badge ? badge.outerHTML : '';
+        const svgIcon = kiroNavItem.querySelector('svg');
+        const svgHTML = svgIcon ? svgIcon.outerHTML : '';
+        kiroNavItem.innerHTML = `${svgHTML} ${settings.siteName} 账号 ${badgeHTML}`;
+    }
+
+    // 更新页面副标题中的 "Kiro"
+    const pageSubtitle = document.querySelector('.page-subtitle');
+    if (pageSubtitle && pageSubtitle.textContent.includes('Kiro')) {
+        pageSubtitle.textContent = pageSubtitle.textContent.replace(/Kiro/g, settings.siteName);
+    }
 }
 
 // ============ 认证相关 ============
@@ -214,7 +262,7 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
-                    Kiro 账号
+                    ${settings.siteName} 账号
                     <span class="nav-badge" id="nav-accounts-count">${stats.total}</span>
                 </a>
                 <a href="#" class="nav-item" data-page="gemini">
@@ -397,3 +445,24 @@ async function updateSidebarStats() {
         return { total: 0, active: 0, error: 0, gemini: 0, warp: 0 };
     }
 }
+
+// ============ 自动初始化站点设置 ============
+// 页面加载时自动更新 title（使用缓存的设置）
+(function() {
+    const settings = window.siteSettings;
+    // 从当前 title 中提取页面名称部分
+    const currentTitle = document.title;
+    const pageName = currentTitle.split(' - ')[0] || currentTitle;
+    // 如果 title 包含 "Kiro"，替换为配置的站点名称
+    if (currentTitle.includes('Kiro')) {
+        document.title = currentTitle.replace(/Kiro/g, settings.siteName);
+    }
+})();
+
+// 页面完全加载后，从服务器获取最新设置并更新
+document.addEventListener('DOMContentLoaded', function() {
+    // 延迟加载站点设置，避免阻塞页面渲染
+    setTimeout(() => {
+        loadSiteSettings();
+    }, 100);
+});

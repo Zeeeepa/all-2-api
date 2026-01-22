@@ -1,39 +1,97 @@
-# Kiro API Client
+# Kiro API Client 🚀
 
-通过 AWS CodeWhisperer/Kiro API 和 Google Antigravity API 访问 Claude/Gemini 模型的 Node.js 客户端。支持多种 OAuth 认证方式和 Web 管理界面。
+一个强大的 API 代理服务，通过 Kiro API 和 Gemini Antigravity API 免费使用 Claude/Gemini 顶级模型，并封装为标准 OpenAI 兼容接口。
 
-## 功能特性
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![GitHub stars](https://img.shields.io/github/stars/CaiGaoQing/kiro-api-client?style=social)](https://github.com/CaiGaoQing/kiro-api-client)
 
-- 支持多种 Claude 模型（Opus 4.5、Sonnet 4/4.5、Haiku 4.5 等）
-- 支持 Gemini 模型（Gemini 3 Pro/Flash、Gemini 2.5 等）
-- 多种认证方式：Google、GitHub、AWS Builder ID、AWS IAM Identity Center
-- Gemini Antigravity OAuth 认证
-- 流式和非流式对话支持
-- Web 管理界面，支持凭据管理和在线聊天
-- 自动 Token 刷新机制
-- 批量导入账号功能
-- 使用量查询和费用统计
-- HTTP/HTTPS 代理支持
+[中文](#) | [English](#)
 
-## 安装
+---
 
+Kiro API Client 是一个突破客户端限制的 API 代理服务，将原本仅限客户端使用的免费大模型（如 Kiro、Gemini Antigravity）转换为标准 OpenAI 兼容接口，可被任意应用调用。基于 Node.js 构建，支持 OpenAI 和 Claude 协议智能转换，让 Cherry-Studio、NextChat、Cline 等工具能够自由使用 Claude Opus 4.5、Gemini 3 Pro 等高级模型。项目内置账号池管理、智能轮询、自动故障转移和健康检查机制，确保服务高可用。
+
+---
+
+## 📑 快速导航
+
+- [💡 核心优势](#-核心优势)
+- [🚀 快速开始](#-快速开始)
+- [🐳 Docker 部署](#-docker-部署)
+- [📋 核心功能](#-核心功能)
+- [📖 支持的模型](#-支持的模型)
+- [🔐 认证配置指南](#-认证配置指南)
+- [🔧 API 接口文档](#-api-接口文档)
+- [⚙️ 高级配置](#️-高级配置)
+- [❓ 常见问题](#-常见问题)
+- [📄 开源许可](#-开源许可)
+
+---
+
+## 💡 核心优势
+
+### 🎯 统一接入，一站式管理
+- **多模型统一接口**：通过标准 OpenAI 兼容协议，一次配置即可接入 Claude、Gemini 等主流大模型
+- **灵活切换机制**：支持通过请求头动态切换模型提供商，满足不同场景需求
+- **零成本迁移**：完全兼容 OpenAI API 规范，Cherry-Studio、NextChat、Cline 等工具无需修改即可使用
+- **多协议智能转换**：支持 OpenAI、Claude 协议智能转换，实现跨协议模型调用
+
+### 🚀 突破限制，提升效率
+- **突破官方限制**：利用 OAuth 授权机制，有效突破 Kiro、Gemini Antigravity 等服务的速率和配额限制
+- **免费高级模型**：通过 Kiro API 免费使用 Claude Opus 4.5，通过 Gemini Antigravity 使用 Gemini 3 Pro，降低使用成本
+- **智能账号池调度**：支持多账号轮询、自动故障转移，确保服务高可用
+
+### 🛡️ 安全可控，数据透明
+- **全链路日志记录**：捕获所有请求和响应数据，支持审计和调试
+- **费用统计**：实时统计 Token 用量和费用，便于成本控制
+- **系统提示管理**：支持覆盖和追加模式，实现统一基础指令与个性化扩展的完美结合
+
+### 🔧 开发者友好，易于扩展
+- **Web UI 管理控制台**：实时配置管理、健康状态监控、API 测试和日志查看
+- **模块化架构**：基于策略和适配器模式，添加新模型提供商仅需 3 步
+- **容器化部署**：提供 Docker 支持，一键部署，跨平台运行
+
+---
+
+## 🚀 快速开始
+
+### 方式一：脚本启动（推荐）
+
+**Linux/macOS:**
 ```bash
-npm install
+chmod +x install-and-run.sh && ./install-and-run.sh
 ```
 
-## 快速开始
+**Windows:**
+```bash
+双击运行 install-and-run.bat
+```
 
-### 启动 Web 管理界面
+### 方式二：手动启动
 
 ```bash
+# 安装依赖
+npm install
+
+# 启动服务
 npm run server
 ```
 
-访问 http://localhost:13003 打开管理界面。默认账号密码：admin / admin123
+### 访问控制台
 
-### Docker 部署
+服务启动后，打开浏览器访问：👉 **http://localhost:13003**
 
-#### 使用内置 MySQL（推荐）
+**默认账号密码**：`admin` / `admin123`
+
+---
+
+## 🐳 Docker 部署
+
+### Docker Compose 部署（推荐）
+
+#### 使用内置 MySQL
 
 ```bash
 # 复制环境变量配置
@@ -54,17 +112,13 @@ docker-compose down
 ```bash
 # 复制并编辑环境变量
 cp .env.example .env
-# 编辑 .env，设置外部数据库地址：
-# MYSQL_HOST=your-db-host
-# MYSQL_PORT=3306
-# MYSQL_USER=your-user
-# MYSQL_PASSWORD=your-password
+# 编辑 .env，设置外部数据库地址
 
 # 启动服务（不启动内置 MySQL）
 docker-compose -f docker-compose.external-db.yml up -d
 ```
 
-#### 环境变量说明
+### 环境变量说明
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
@@ -76,64 +130,123 @@ docker-compose -f docker-compose.external-db.yml up -d
 | `MYSQL_DATABASE` | `kiro_api` | 数据库名称 |
 | `MYSQL_EXTERNAL_PORT` | `13306` | MySQL 外部访问端口 |
 
-### Index Page
+---
+
+## 📋 核心功能
+
+### Web UI 管理控制台
+
+功能完善的 Web 管理界面，包括：
+
+- 📊 **仪表盘**：系统概览、使用统计、费用分析
+- ⚙️ **配置管理**：实时参数修改，支持 Kiro 和 Gemini 提供商配置
+- 🔗 **凭据池管理**：监控活跃连接、健康状态统计、启用/禁用管理
+- 📁 **账号管理**：集中式 OAuth 凭据管理，支持批量导入
+- 📜 **实时日志**：实时显示系统和请求日志，带管理控制
+- 🔐 **登录验证**：默认密码 `admin123`，可在控制台修改
+
+### 多模态输入能力
+
+支持图片、文档等多种输入类型，提供更丰富的交互体验和更强大的应用场景。
+
+### 最新模型支持
+
+无缝支持以下最新大模型：
+
+- **Claude Opus 4.5** - Anthropic 最强模型，通过 Kiro 支持
+- **Claude Sonnet 4/4.5** - 高性价比选择，通过 Kiro 支持
+- **Gemini 3 Pro** - Google 下一代架构预览，通过 Gemini Antigravity 支持
+- **Gemini 3 Flash** - 快速响应模型，通过 Gemini Antigravity 支持
+
+---
+
+### 界面截图
+
+#### 首页概览
 ![Index Page](https://github.com/CaiGaoQing/kiro-api-client/blob/main/index.png?raw=true)
 
-### Index Page 2
+#### 统计面板
 ![Index Page 2](https://github.com/CaiGaoQing/kiro-api-client/blob/main/index2.png?raw=true)
 
-### OAuth Authentication
+#### OAuth 认证
 ![OAuth Authentication](https://github.com/CaiGaoQing/kiro-api-client/blob/main/oauth.png?raw=true)
 
-### API Interface
+#### API 接口
 ![API Interface](https://github.com/CaiGaoQing/kiro-api-client/blob/main/api.png?raw=true)
 
-### Chat Interface
+#### 聊天界面
 ![Chat Interface](https://github.com/CaiGaoQing/kiro-api-client/blob/main/chat.png?raw=true)
 
-### Usage Statistics
+#### 使用统计
 ![Usage Statistics](https://github.com/CaiGaoQing/kiro-api-client/blob/main/usage.png?raw=true)
 
-### 交流群
-![qr](https://github.com/CaiGaoQing/kiro-api-client/blob/main/qr.jpg?raw=true)
+---
 
-### 打赏一下
-![打赏一下](https://github.com/CaiGaoQing/kiro-api-client/blob/main/cof.jpg?raw=true)
-### 运行测试
+## 📖 支持的模型
 
-```bash
-npm test
-```
+### Kiro (Claude) 模型
 
-## 支持的模型
-
-| 模型名称 | 内部映射名称 |
-|---------|-------------|
-| `claude-opus-4-5-20251101` | `claude-opus-4.5` |
-| `claude-sonnet-4-20250514` | `CLAUDE_SONNET_4_20250514_V1_0` |
-| `claude-sonnet-4-5-20250929` | `CLAUDE_SONNET_4_5_20250929_V1_0` |
-| `claude-3-7-sonnet-20250219` | `CLAUDE_3_7_SONNET_20250219_V1_0` |
-| `claude-haiku-4-5` | `claude-haiku-4.5` |
+| 模型名称 | 内部映射名称 | 说明 |
+|---------|-------------|------|
+| `claude-opus-4-5-20251101` | `claude-opus-4.5` | Anthropic 最强模型 |
+| `claude-sonnet-4-20250514` | `CLAUDE_SONNET_4_20250514_V1_0` | 高性价比选择 |
+| `claude-sonnet-4-5-20250929` | `CLAUDE_SONNET_4_5_20250929_V1_0` | 最新 Sonnet 版本 |
+| `claude-3-7-sonnet-20250219` | `CLAUDE_3_7_SONNET_20250219_V1_0` | Claude 3.7 Sonnet |
+| `claude-haiku-4-5` | `claude-haiku-4.5` | 快速响应模型 |
 
 ### Gemini 模型 (Antigravity)
 
-| 模型名称 | 内部映射名称 |
-|---------|-------------|
-| `gemini-3-pro-preview` | `gemini-3-pro-high` |
-| `gemini-3-pro-image-preview` | `gemini-3-pro-image` |
-| `gemini-3-flash-preview` | `gemini-3-flash` |
-| `gemini-2.5-flash-preview` | `gemini-2.5-flash` |
-| `gemini-2.5-computer-use-preview-10-2025` | `rev19-uic3-1p` |
-| `gemini-claude-sonnet-4-5` | `claude-sonnet-4-5` |
-| `gemini-claude-sonnet-4-5-thinking` | `claude-sonnet-4-5-thinking` |
-| `gemini-claude-opus-4-5-thinking` | `claude-opus-4-5-thinking` |
+| 模型名称 | 内部映射名称 | 说明 |
+|---------|-------------|------|
+| `gemini-3-pro-preview` | `gemini-3-pro-high` | Google 最新旗舰 |
+| `gemini-3-pro-image-preview` | `gemini-3-pro-image` | 图像生成版本 |
+| `gemini-3-flash-preview` | `gemini-3-flash` | 快速响应版本 |
+| `gemini-2.5-flash-preview` | `gemini-2.5-flash` | 2.5 Flash 版本 |
+| `gemini-2.5-computer-use-preview-10-2025` | `rev19-uic3-1p` | 计算机使用预览 |
+| `gemini-claude-sonnet-4-5` | `claude-sonnet-4-5` | Claude via Gemini |
+| `gemini-claude-sonnet-4-5-thinking` | `claude-sonnet-4-5-thinking` | 思考模式 |
+| `gemini-claude-opus-4-5-thinking` | `claude-opus-4-5-thinking` | Opus 思考模式 |
 
-## 认证方式
+### 模型定价参考
+
+#### Kiro (Claude) 模型
+
+| 模型 | 输入价格 ($/M tokens) | 输出价格 ($/M tokens) |
+|------|----------------------|----------------------|
+| Claude Opus 4.5 | $15 | $75 |
+| Claude Sonnet 4/4.5 | $3 | $15 |
+| Claude 3.7 Sonnet | $3 | $15 |
+| Claude Haiku 4.5 | $0.80 | $4 |
+
+#### Gemini 模型
+
+| 模型 | 输入价格 ($/M tokens) | 输出价格 ($/M tokens) |
+|------|----------------------|----------------------|
+| Gemini 3 Pro | $1.25 | $5 |
+| Gemini 3 Flash | $0.075 | $0.30 |
+| Gemini 2.5 Flash | $0.075 | $0.30 |
+| Gemini Claude Sonnet 4.5 | $3 | $15 |
+| Gemini Claude Opus 4.5 Thinking | $15 | $75 |
+
+---
+
+## 🔐 认证配置指南
+
+<details>
+<summary>点击展开详细认证配置步骤</summary>
 
 ### 1. Social Auth (Google/GitHub)
 
 使用 PKCE 流程，通过本地 HTTP 回调服务器（端口 19876-19880）完成认证。
 
+**Web 界面认证流程：**
+1. 访问 Web 管理界面 http://localhost:13003
+2. 进入「Kiro 账号」页面
+3. 点击「添加账号」->「OAuth 登录」
+4. 选择 Google 或 GitHub 登录
+5. 授权成功后自动保存凭据
+
+**CLI 认证：**
 ```bash
 node src/auth-cli.js
 ```
@@ -151,8 +264,7 @@ node src/auth-cli.js
 通过 Google OAuth 2.0 认证访问 Gemini Antigravity API。
 
 **Web 界面认证流程：**
-
-1. 访问 Web 管理界面 http://localhost:3000
+1. 访问 Web 管理界面 http://localhost:13003
 2. 进入「Gemini 账号」页面
 3. 点击「添加账号」->「OAuth 登录」
 4. 在弹出的 Google 登录页面完成授权
@@ -167,141 +279,11 @@ node src/auth-cli.js
 | 回调端口 | `8086` |
 | Token 端点 | `https://oauth2.googleapis.com/token` |
 
-**Token 刷新：**
+</details>
 
-```bash
-curl -X POST 'https://oauth2.googleapis.com/token' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "client_id": "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com",
-    "client_secret": "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",
-    "refresh_token": "YOUR_REFRESH_TOKEN",
-    "grant_type": "refresh_token"
-  }'
-```
+---
 
-## 代理设置
-
-系统支持 HTTP/HTTPS 代理，用于在网络受限环境下访问 API。
-
-### 通过 Web 界面配置
-
-1. 访问 Web 管理界面 http://localhost:3000
-2. 进入「代理设置」页面
-3. 输入代理地址并启用
-
-### 支持的代理格式
-
-```
-# 标准 URL 格式
-http://host:port
-http://username:password@host:port
-
-# ISP 格式（自动转换）
-host:port:username:password
-host:port
-```
-
-### 代理 API
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/proxy/config` | 获取当前代理配置 |
-| POST | `/api/proxy/config` | 保存代理配置 |
-| POST | `/api/proxy/test` | 测试代理连接 |
-
-**保存代理配置示例：**
-
-```bash
-curl -X POST 'http://localhost:3000/api/proxy/config' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "enabled": true,
-    "proxyUrl": "http://127.0.0.1:7890"
-  }'
-```
-
-**测试代理连接：**
-
-```bash
-curl -X POST 'http://localhost:3000/api/proxy/test' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "proxyUrl": "http://127.0.0.1:7890"
-  }'
-```
-
-### 环境变量代理
-
-也可以通过环境变量设置代理（优先级低于数据库配置）：
-
-```bash
-export https_proxy=http://127.0.0.1:7890
-export http_proxy=http://127.0.0.1:7890
-```
-
-## 编程接口
-
-### 基本使用
-
-```javascript
-import { KiroClient, KiroAPI } from 'kiro-api-client';
-
-// 方式1: 从凭据文件创建客户端
-const client = await KiroClient.fromCredentialsFile();
-
-// 方式2: 直接创建客户端
-const client = new KiroClient({
-    accessToken: 'your-access-token',
-    refreshToken: 'your-refresh-token',
-    profileArn: 'your-profile-arn',  // Social Auth 需要
-    region: 'us-east-1'
-});
-
-// 发送消息（流式）
-const stream = await client.chatStream([
-    { role: 'user', content: '你好' }
-]);
-
-for await (const chunk of stream) {
-    process.stdout.write(chunk);
-}
-
-// 发送消息（非流式）
-const response = await client.chat([
-    { role: 'user', content: '你好' }
-]);
-console.log(response);
-```
-
-### 使用 KiroAPI 类
-
-```javascript
-import { KiroAPI } from 'kiro-api-client';
-
-// 刷新 Token
-const newTokens = await KiroAPI.refreshToken({
-    refreshToken: 'your-refresh-token',
-    authMethod: 'social',  //'builder-id', 'IdC'
-    region: 'us-east-1'
-});
-
-// 获取使用量
-const usage = await KiroAPI.getUsageLimits({
-    accessToken: 'your-access-token',
-    region: 'us-east-1'
-});
-
-// 列出可用模型
-const models = await KiroAPI.listModels({
-    accessToken: 'your-access-token',
-    region: 'us-east-1'
-});
-```
-
-## Web API 接口
-
-启动服务器后，可通过以下 REST API 进行操作。
+## 🔧 API 接口文档
 
 ### 外部 API 端点（需要 API Key 认证）
 
@@ -314,11 +296,54 @@ const models = await KiroAPI.listModels({
 | POST | `/v1/messages` | Claude API 兼容接口（支持流式） |
 | POST | `/v1/chat/completions` | OpenAI API 兼容接口（支持流式） |
 | POST | `/gemini-antigravity/v1/messages` | Gemini Antigravity API（Claude 格式） |
-| POST | `/v1/gemini/messages` | Gemini API（兼容旧路径） |
 
 **Model-Provider 路由：** 可通过 `Model-Provider` 请求头指定 Provider：
 - `gemini` 或 `gemini-antigravity`：路由到 Gemini Antigravity
 - 默认：使用 Kiro/Claude Provider
+
+### API 调用示例
+
+**OpenAI 兼容接口：**
+
+```bash
+curl -X POST 'http://localhost:13003/v1/chat/completions' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer YOUR_API_KEY' \
+  -d '{
+    "model": "claude-sonnet-4-20250514",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": true
+  }'
+```
+
+**Claude 兼容接口：**
+
+```bash
+curl -X POST 'http://localhost:13003/v1/messages' \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: YOUR_API_KEY' \
+  -d '{
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+**Gemini Antigravity 接口：**
+
+```bash
+curl -X POST 'http://localhost:13003/gemini-antigravity/v1/messages' \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-Key: YOUR_API_KEY' \
+  -d '{
+    "model": "gemini-3-pro-preview",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello"}]
+  }'
+```
+
+<details>
+<summary>点击展开完整 API 接口列表</summary>
 
 ### 认证 API
 
@@ -349,7 +374,7 @@ const models = await KiroAPI.listModels({
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/api/credentials` | 获取所有凭据 |
-| GET | `/api/credentials/:id` | 获取单个凭据（?full=true 显示完整信息） |
+| GET | `/api/credentials/:id` | 获取单个凭据 |
 | DELETE | `/api/credentials/:id` | 删除凭据 |
 | POST | `/api/credentials/:id/activate` | 设为活跃凭据 |
 | POST | `/api/credentials/:id/refresh` | 手动刷新 Token |
@@ -358,28 +383,6 @@ const models = await KiroAPI.listModels({
 | GET | `/api/credentials/:id/usage` | 获取使用量 |
 | POST | `/api/credentials/import` | 从文件导入凭据 |
 | POST | `/api/credentials/batch-import` | 批量导入 Social 账号 |
-
-### Kiro 错误凭据管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/error-credentials` | 获取失败凭据列表 |
-| DELETE | `/api/error-credentials/:id` | 删除失败凭据 |
-| POST | `/api/error-credentials/:id/refresh` | 重试刷新失败凭据 |
-| POST | `/api/error-credentials/:id/restore` | 手动恢复凭据（不刷新） |
-| GET | `/api/error-credentials/:id/usage` | 获取用量（成功则自动恢复） |
-
-### Kiro OAuth 登录
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/oauth/builder-id/start` | 启动 Builder ID OAuth |
-| POST | `/api/oauth/social/start` | 启动 Social Auth (Google/GitHub) |
-| GET | `/api/oauth/session/:sessionId` | 检查 OAuth 会话状态 |
-| DELETE | `/api/oauth/session/:sessionId` | 关闭 OAuth 会话 |
-| GET | `/api/oauth/configs` | 从 configs 目录加载凭据 |
-| POST | `/api/oauth/configs/import` | 从 configs 导入单个凭据 |
-| POST | `/api/oauth/configs/import-all` | 批量导入所有 configs 凭据 |
 
 ### Gemini 凭证管理
 
@@ -398,28 +401,6 @@ const models = await KiroAPI.listModels({
 | POST | `/api/gemini/oauth/start` | 启动 Gemini OAuth 登录 |
 | GET | `/api/gemini/models` | 获取 Gemini 模型列表 |
 
-### Gemini 错误凭证管理
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/gemini/error-credentials` | 获取错误凭证列表 |
-| DELETE | `/api/gemini/error-credentials/:id` | 删除错误凭证 |
-| POST | `/api/gemini/error-credentials/:id/refresh` | 刷新并恢复凭证 |
-
-### Gemini 聊天
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/gemini/chat/:id` | SSE 流式聊天 |
-| POST | `/api/gemini/chat/:id/sync` | 非流式聊天 |
-
-### Kiro 聊天
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/chat/:id` | SSE 流式聊天 |
-| POST | `/api/chat/:id/sync` | 非流式聊天 |
-
 ### API 日志管理（需要管理员权限）
 
 | 方法 | 路径 | 说明 |
@@ -430,9 +411,6 @@ const models = await KiroAPI.listModels({
 | POST | `/api/logs/cleanup` | 清理旧日志 |
 | GET | `/api/error-logs` | 获取错误日志列表 |
 | GET | `/api/logs-stats` | 获取日志统计信息 |
-| GET | `/api/logs-stats/by-ip` | 按 IP 统计请求 |
-| GET | `/api/logs-stats/by-api-key` | 按 API Key 统计 |
-| GET | `/api/logs-stats/by-date` | 按日期统计（用于图表） |
 | GET | `/api/logs-stats/cost` | 获取费用统计汇总 |
 
 ### 代理配置（需要登录）
@@ -451,88 +429,89 @@ const models = await KiroAPI.listModels({
 | GET | `/api/usage` | 获取活跃凭据使用限额 |
 | POST | `/api/public/usage` | 通过 API Key 查询用量 |
 
-### 批量导入示例
+</details>
 
-```bash
-curl -X POST 'http://localhost:3000/api/credentials/batch-import' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "accounts": [
-      {"email": "user1@example.com", "refreshToken": "aorAAAAA..."},
-      {"email": "user2@example.com", "refreshToken": "aorAAAAA..."}
-    ],
-    "region": "us-east-1"
-  }'
+---
+
+## ⚙️ 高级配置
+
+<details>
+<summary>点击展开代理配置、编程接口等高级设置</summary>
+
+### 代理设置
+
+系统支持 HTTP/HTTPS 代理，用于在网络受限环境下访问 API。
+
+**通过 Web 界面配置：**
+1. 访问 Web 管理界面 http://localhost:13003
+2. 进入「代理设置」页面
+3. 输入代理地址并启用
+
+**支持的代理格式：**
+```
+# 标准 URL 格式
+http://host:port
+http://username:password@host:port
+
+# ISP 格式（自动转换）
+host:port:username:password
+host:port
 ```
 
-### 外部 API 调用示例
-
-**OpenAI 兼容接口：**
-
+**环境变量代理：**
 ```bash
-curl -X POST 'http://localhost:3000/v1/chat/completions' \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_API_KEY' \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "messages": [{"role": "user", "content": "Hello"}],
-    "stream": true
-  }'
+export https_proxy=http://127.0.0.1:7890
+export http_proxy=http://127.0.0.1:7890
 ```
 
-**Claude 兼容接口：**
+### 编程接口
 
-```bash
-curl -X POST 'http://localhost:3000/v1/messages' \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: YOUR_API_KEY' \
-  -d '{
-    "model": "claude-sonnet-4-20250514",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'
+```javascript
+import { KiroClient, KiroAPI } from 'kiro-api-client';
+
+// 方式1: 从凭据文件创建客户端
+const client = await KiroClient.fromCredentialsFile();
+
+// 方式2: 直接创建客户端
+const client = new KiroClient({
+    accessToken: 'your-access-token',
+    refreshToken: 'your-refresh-token',
+    profileArn: 'your-profile-arn',
+    region: 'us-east-1'
+});
+
+// 发送消息（流式）
+const stream = await client.chatStream([
+    { role: 'user', content: '你好' }
+]);
+
+for await (const chunk of stream) {
+    process.stdout.write(chunk);
+}
+
+// 发送消息（非流式）
+const response = await client.chat([
+    { role: 'user', content: '你好' }
+]);
+console.log(response);
 ```
 
-**Gemini Antigravity 接口：**
+### 环境变量
 
-```bash
-curl -X POST 'http://localhost:3000/gemini-antigravity/v1/messages' \
-  -H 'Content-Type: application/json' \
-  -H 'X-API-Key: YOUR_API_KEY' \
-  -d '{
-    "model": "gemini-3-pro-preview",
-    "max_tokens": 1024,
-    "messages": [{"role": "user", "content": "Hello"}]
-  }'
-```
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `PORT` | `13003` | API 服务端口 |
+| `MYSQL_HOST` | `127.0.0.1` | MySQL 主机地址 |
+| `MYSQL_PORT` | `13306` | MySQL 端口 |
+| `MYSQL_USER` | `root` | MySQL 用户名 |
+| `MYSQL_PASSWORD` | - | MySQL 密码 |
+| `MYSQL_DATABASE` | `kiro_api` | 数据库名称 |
+| `LOG_DIR` | `./logs` | 日志文件目录 |
+| `LOG_LEVEL` | `INFO` | 日志级别 |
+| `LOG_ENABLED` | `true` | 是否启用日志 |
+| `LOG_CONSOLE` | `true` | 是否输出到控制台 |
 
-## Token 刷新示例
-
-### Social Auth (Google/GitHub)
-
-```bash
-curl -X POST 'https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken' \
-  -H 'Content-Type: application/json' \
-  -d '{"refreshToken":"YOUR_REFRESH_TOKEN"}'
-```
-
-### Builder ID
-
-```bash
-curl -X POST 'https://oidc.us-east-1.amazonaws.com/token' \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=refresh_token&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&refresh_token=YOUR_REFRESH_TOKEN'
-```
-
-### IAM Identity Center
-
-```bash
-curl -X POST 'https://sso-oidc.us-east-1.amazonaws.com/token' \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=refresh_token&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT_SECRET&refresh_token=YOUR_REFRESH_TOKEN'
-```
-
-## 项目结构
+### 项目结构
 
 ```
 src/
@@ -552,228 +531,91 @@ src/
 └── public/               # Web 前端文件
 ```
 
-## 数据库配置
+</details>
 
-系统使用 MySQL 数据库存储凭据和配置信息。
+---
 
-### 环境变量
+## ❓ 常见问题
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `MYSQL_HOST` | `127.0.0.1` | MySQL 主机地址 |
-| `MYSQL_PORT` | `13306` | MySQL 端口 |
-| `MYSQL_USER` | `root` | MySQL 用户名 |
-| `MYSQL_PASSWORD` | - | MySQL 密码 |
-| `MYSQL_DATABASE` | `kiro_api` | 数据库名称 |
+<details>
+<summary>点击展开常见问题及解决方案</summary>
 
-### 数据库表结构
+### 1. 端口被占用怎么办？
 
-#### credentials - Kiro 凭据表
+修改环境变量 `PORT` 或在 `.env` 文件中设置其他端口。
 
-存储 Kiro API 的认证凭据（Google/GitHub/Builder ID/IdC）。
+### 2. Docker 启动失败？
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `name` | VARCHAR(255) | 凭据名称（唯一），通常为邮箱 |
-| `access_token` | TEXT | 访问令牌 |
-| `refresh_token` | TEXT | 刷新令牌 |
-| `profile_arn` | VARCHAR(512) | AWS Profile ARN（Social Auth 需要） |
-| `client_id` | VARCHAR(255) | 客户端 ID（Builder ID/IdC 需要） |
-| `client_secret` | TEXT | 客户端密钥（Builder ID/IdC 需要） |
-| `auth_method` | VARCHAR(50) | 认证方式：`social`/`builder-id`/`IdC` |
-| `provider` | VARCHAR(50) | 提供商：`Google`/`GitHub` |
-| `region` | VARCHAR(50) | AWS 区域，默认 `us-east-1` |
-| `expires_at` | VARCHAR(50) | Token 过期时间 |
-| `is_active` | TINYINT | 是否为活跃凭据 |
-| `usage_data` | JSON | 使用量数据 |
-| `usage_updated_at` | DATETIME | 使用量更新时间 |
-| `created_at` | DATETIME | 创建时间 |
-| `updated_at` | DATETIME | 更新时间 |
+检查 Docker 是否正确安装，确保端口未被占用，查看 `docker logs` 获取详细错误信息。
 
-#### error_credentials - Kiro 错误凭据表
+### 3. 遇到 429 错误（请求过多）？
 
-存储刷新失败的 Kiro 凭据，用于后续重试。
+这是由于请求频率过高导致的限制。建议：
+- 添加更多账号到账号池
+- 降低请求频率
+- 等待一段时间后重试
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `original_id` | INT | 原凭据 ID |
-| `name` | VARCHAR(255) | 凭据名称 |
-| `access_token` | TEXT | 访问令牌 |
-| `refresh_token` | TEXT | 刷新令牌 |
-| `profile_arn` | VARCHAR(512) | AWS Profile ARN |
-| `client_id` | VARCHAR(255) | 客户端 ID |
-| `client_secret` | TEXT | 客户端密钥 |
-| `auth_method` | VARCHAR(50) | 认证方式 |
-| `region` | VARCHAR(50) | AWS 区域 |
-| `expires_at` | VARCHAR(50) | Token 过期时间 |
-| `error_message` | TEXT | 错误信息 |
-| `error_count` | INT | 错误次数 |
-| `last_error_at` | DATETIME | 最后错误时间 |
-| `created_at` | DATETIME | 创建时间 |
+### 4. Token 刷新失败？
 
-#### gemini_credentials - Gemini 凭据表
+- 检查网络连接是否正常
+- 确认 refresh_token 是否有效
+- 查看错误凭据列表，尝试手动刷新
 
-存储 Gemini Antigravity API 的认证凭据。
+### 5. 如何批量导入账号？
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `name` | VARCHAR(255) | 凭据名称（唯一） |
-| `email` | VARCHAR(255) | Google 账号邮箱 |
-| `access_token` | TEXT | 访问令牌 |
-| `refresh_token` | TEXT | 刷新令牌 |
-| `project_id` | VARCHAR(255) | Antigravity 项目 ID |
-| `expires_at` | VARCHAR(50) | Token 过期时间 |
-| `is_active` | TINYINT | 是否为活跃凭据 |
-| `usage_data` | JSON | 使用量数据 |
-| `usage_updated_at` | DATETIME | 使用量更新时间 |
-| `error_count` | INT | 错误次数 |
-| `last_error_at` | DATETIME | 最后错误时间 |
-| `last_error_message` | TEXT | 最后错误信息 |
-| `created_at` | DATETIME | 创建时间 |
-| `updated_at` | DATETIME | 更新时间 |
+```bash
+curl -X POST 'http://localhost:13003/api/credentials/batch-import' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "accounts": [
+      {"email": "user1@example.com", "refreshToken": "aorAAAAA..."},
+      {"email": "user2@example.com", "refreshToken": "aorAAAAA..."}
+    ],
+    "region": "us-east-1"
+  }'
+```
 
-#### gemini_error_credentials - Gemini 错误凭据表
+</details>
 
-存储刷新失败的 Gemini 凭据。
+---
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `original_id` | INT | 原凭据 ID |
-| `name` | VARCHAR(255) | 凭据名称 |
-| `email` | VARCHAR(255) | Google 账号邮箱 |
-| `access_token` | TEXT | 访问令牌 |
-| `refresh_token` | TEXT | 刷新令牌 |
-| `project_id` | VARCHAR(255) | 项目 ID |
-| `expires_at` | VARCHAR(50) | Token 过期时间 |
-| `error_message` | TEXT | 错误信息 |
-| `error_count` | INT | 错误次数 |
-| `last_error_at` | DATETIME | 最后错误时间 |
-| `created_at` | DATETIME | 创建时间 |
-
-#### users - 用户表
-
-存储系统用户信息。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `username` | VARCHAR(255) | 用户名（唯一） |
-| `password_hash` | VARCHAR(255) | 密码哈希 |
-| `is_admin` | TINYINT | 是否为管理员 |
-| `created_at` | DATETIME | 创建时间 |
-| `updated_at` | DATETIME | 更新时间 |
-
-#### api_keys - API 密钥表
-
-存储用户的 API 密钥，用于外部调用。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `user_id` | INT | 关联用户 ID |
-| `name` | VARCHAR(255) | 密钥名称 |
-| `key_value` | VARCHAR(255) | 密钥值 |
-| `key_hash` | VARCHAR(255) | 密钥哈希（唯一） |
-| `key_prefix` | VARCHAR(50) | 密钥前缀（用于显示） |
-| `is_active` | TINYINT | 是否启用 |
-| `last_used_at` | DATETIME | 最后使用时间 |
-| `created_at` | DATETIME | 创建时间 |
-| `daily_limit` | INT | 每日请求限制（0=无限制） |
-| `monthly_limit` | INT | 每月请求限制 |
-| `total_limit` | INT | 总请求限制 |
-| `concurrent_limit` | INT | 并发请求限制 |
-| `rate_limit` | INT | 速率限制（每分钟） |
-| `daily_cost_limit` | DECIMAL(10,2) | 每日费用限制 |
-| `monthly_cost_limit` | DECIMAL(10,2) | 每月费用限制 |
-| `total_cost_limit` | DECIMAL(10,2) | 总费用限制 |
-| `expires_in_days` | INT | 有效期（天） |
-
-#### api_logs - API 日志表
-
-记录所有 API 请求日志。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `id` | INT | 主键，自增 |
-| `request_id` | VARCHAR(100) | 请求 ID |
-| `api_key_id` | INT | 关联 API 密钥 ID |
-| `api_key_prefix` | VARCHAR(50) | API 密钥前缀 |
-| `credential_id` | INT | 使用的凭据 ID |
-| `credential_name` | VARCHAR(255) | 凭据名称 |
-| `ip_address` | VARCHAR(50) | 请求 IP 地址 |
-| `user_agent` | TEXT | User-Agent |
-| `method` | VARCHAR(10) | 请求方法 |
-| `path` | VARCHAR(255) | 请求路径 |
-| `model` | VARCHAR(100) | 使用的模型 |
-| `stream` | TINYINT | 是否流式请求 |
-| `input_tokens` | INT | 输入 Token 数 |
-| `output_tokens` | INT | 输出 Token 数 |
-| `request_messages` | MEDIUMTEXT | 请求消息内容 |
-| `response_content` | MEDIUMTEXT | 响应内容 |
-| `status_code` | INT | HTTP 状态码 |
-| `error_message` | TEXT | 错误信息 |
-| `duration_ms` | INT | 请求耗时（毫秒） |
-| `created_at` | DATETIME | 创建时间 |
-
-#### settings - 系统设置表
-
-存储系统配置（如代理设置）。
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `key` | VARCHAR(255) | 配置键（主键） |
-| `value` | TEXT | 配置值（JSON 格式） |
-| `updated_at` | DATETIME | 更新时间 |
-
-## 环境变量
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `LOG_DIR` | `./logs` | 日志文件目录 |
-| `LOG_LEVEL` | `INFO` | 日志级别：DEBUG, INFO, WARN, ERROR |
-| `LOG_ENABLED` | `true` | 设为 `false` 禁用日志 |
-| `LOG_CONSOLE` | `true` | 设为 `false` 禁用控制台输出 |
-
-## 模型定价
-
-### Kiro (Claude) 模型
-
-| 模型 | 输入价格 ($/M tokens) | 输出价格 ($/M tokens) |
-|------|----------------------|----------------------|
-| Claude Opus 4.5 | $15 | $75 |
-| Claude Sonnet 4/4.5 | $3 | $15 |
-| Claude 3.7 Sonnet | $3 | $15 |
-| Claude Haiku 4.5 | $0.80 | $4 |
-
-### Gemini 模型
-
-| 模型 | 输入价格 ($/M tokens) | 输出价格 ($/M tokens) |
-|------|----------------------|----------------------|
-| Gemini 3 Pro | $1.25 | $5 |
-| Gemini 3 Flash | $0.075 | $0.30 |
-| Gemini 2.5 Flash | $0.075 | $0.30 |
-| Gemini Claude Sonnet 4.5 | $3 | $15 |
-| Gemini Claude Opus 4.5 Thinking | $15 | $75 |
-
-## 注意事项
+## 📝 注意事项
 
 - Token 会在过期前 10 分钟自动刷新
-- 刷新失败的凭据会被移至 `error_credentials` 表，并定期重试
+- 刷新失败的凭据会被移至错误凭据表，并定期重试
 - 消息历史要求 user/assistant 角色交替，相邻同角色消息会自动合并
 - 默认区域为 `us-east-1`
+
+---
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=CaiGaoQing/kiro-api-client&type=date&legend=top-left)](https://www.star-history.com/#CaiGaoQing/kiro-api-client&type=date&legend=top-left)
 
-## 特别鸣谢
+---
 
-- [AIClient-2-API](https://github.com/justlovemaki/AIClient-2-API)
+## 交流群
 
-## 许可证
+![qr](https://github.com/CaiGaoQing/kiro-api-client/blob/main/qr.jpg?raw=true)
 
-MIT
+## 打赏支持
+
+![打赏一下](https://github.com/CaiGaoQing/kiro-api-client/blob/main/cof.jpg?raw=true)
+
+---
+
+## 🙏 特别鸣谢
+
+- [AIClient-2-API](https://github.com/justlovemaki/AIClient-2-API) - 项目灵感来源
+
+---
+
+## 📄 开源许可
+
+本项目遵循 [MIT](https://opensource.org/licenses/MIT) 许可证。
+
+---
+
+## ⚠️ 免责声明
+
+本项目仅供学习和研究使用。使用本项目时，请遵守相关服务的使用条款和法律法规。开发者不对因使用本项目而产生的任何问题负责。

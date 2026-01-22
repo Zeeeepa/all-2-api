@@ -20,9 +20,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     contextMenu = document.getElementById('context-menu');
     searchInput = document.getElementById('search-input');
 
+    // 先加载站点设置
+    await loadSiteSettings();
+
     // 注入侧边栏
     document.getElementById('sidebar-container').innerHTML = getSidebarHTML();
     initSidebar('accounts');
+
+    // 更新页面标题和副标题
+    const settings = window.siteSettings;
+    document.title = `账号管理 - ${settings.siteName} ${settings.siteSubtitle}`;
+    const pageSubtitle = document.querySelector('.page-subtitle');
+    if (pageSubtitle) {
+        pageSubtitle.textContent = `管理您的 ${settings.siteName} API 凭证`;
+    }
 
     if (!await checkAuth()) return;
 

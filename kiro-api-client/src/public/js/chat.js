@@ -25,9 +25,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatModel = document.getElementById('chat-model');
     chatSettingsModal = document.getElementById('chat-settings-modal');
 
+    // 先加载站点设置
+    await loadSiteSettings();
+
     // 注入侧边栏
     document.getElementById('sidebar-container').innerHTML = getSidebarHTML();
     initSidebar('chat');
+
+    // 更新页面标题和模型分组标签
+    const settings = window.siteSettings;
+    document.title = `对话测试 - ${settings.siteName} ${settings.siteSubtitle}`;
+
+    // 更新模型分组标签中的 "Kiro"
+    const kiroOptgroup = chatModel.querySelector('optgroup[label*="Kiro"]');
+    if (kiroOptgroup) {
+        kiroOptgroup.label = `Claude (${settings.siteName})`;
+    }
 
     if (!await checkAuth()) return;
 
