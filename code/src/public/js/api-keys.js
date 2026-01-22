@@ -4,12 +4,14 @@ let apiKeys = [];
 let createKeyModal;
 let limitsModal;
 let batchCreateModal;
+let renewModal;
 let batchGeneratedKeys = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     createKeyModal = document.getElementById('create-key-modal');
     limitsModal = document.getElementById('limits-modal');
     batchCreateModal = document.getElementById('batch-create-modal');
+    renewModal = document.getElementById('renew-modal');
 
     document.getElementById('sidebar-container').innerHTML = getSidebarHTML();
     initSidebar('api-keys');
@@ -48,11 +50,20 @@ function setupEventListeners() {
         if (e.target === batchCreateModal) closeBatchCreateModal();
     });
 
+    // 续费模态框事件
+    document.getElementById('renew-modal-close').addEventListener('click', closeRenewModal);
+    document.getElementById('renew-modal-cancel').addEventListener('click', closeRenewModal);
+    document.getElementById('renew-modal-submit').addEventListener('click', submitRenew);
+    renewModal.addEventListener('click', function(e) {
+        if (e.target === renewModal) closeRenewModal();
+    });
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeCreateModal();
             closeLimitsModal();
             closeBatchCreateModal();
+            closeRenewModal();
         }
     });
 }
@@ -115,6 +126,7 @@ function renderApiKeys() {
             '<td>' +
             '<div class="api-key-actions-cell">' +
             '<button class="btn btn-secondary btn-sm" onclick="openLimitsModal(' + key.id + ')" title="配置限制">限制</button>' +
+            '<button class="btn btn-secondary btn-sm" onclick="openRenewModal(' + key.id + ')" title="续费">续费</button>' +
             '<button class="btn btn-secondary btn-sm" onclick="toggleApiKey(' + key.id + ')">' + (key.isActive ? '禁用' : '启用') + '</button>' +
             '<button class="btn btn-danger btn-sm" onclick="deleteApiKey(' + key.id + ')">删除</button>' +
             '</div>' +
@@ -566,4 +578,95 @@ function copyAllBatchKeys() {
     }).join('\n');
 
     copyToClipboard(text);
+}
+
+// ============ 续费相关函数 ============
+
+function setRenewDays(days) {
+    document.getElementById('renew-days').value = days;
+}
+
+async function openRenewModal(keyId) {
+    try {
+        // 获取密钥详情
+        const res = await fetch('/api/keys/' + keyId, {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const result = await res.json();
+        if (!result.success) {
+            showToast(result.error || '获取密钥信息失败', 'error');
+            return;
+        }
+
+        const key = result.data;
+        document.getElementById('renew-key-id').value = keyId;
+        document.getElementById('renew-key-name').textContent = key.name;
+        document.getElementById('renew-days').value = 30;
+
+        // 获取当前状态
+        const statusRes = await fetch('/api/keys/' + keyId + '/limits-status', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        const statusResult = await statusRes.json();
+
+        if (statusResult.success && statusResult.data) {
+            const { expireDate, remaining } = statusResult.data;
+            if (expireDate) {
+                const expDate = new Date(expireDate);
+                const now = new Date();
+                const isExpired = expDate < now;
+                const daysLeft = remaining.days;
+
+                document.getElementById('renew-current-status').innerHTML = isExpired
+                    ? '<span style="color: var(--danger-color);">已过期</span>'
+                    : '<span style="color: var(--success-color);">有效</span>';
+                document.getElementById('renew-remaining-days').innerHTML = isExpired
+                    ? '<span style="color: var(--danger-color);">已过期</span>'
+                    : '<span>' + daysLeft + ' 天</span>';
+            } else {
+                document.getElementById('renew-current-status').innerHTML = '<span style="color: var(--text-muted);">永久有效</span>';
+                document.getElementById('renew-remaining-days').innerHTML = '<span style="color: var(--text-muted);">无限制</span>';
+            }
+        }
+
+        renewModal.classList.add('active');
+    } catch (err) {
+        showToast('获取密钥信息失败: ' + err.message, 'error');
+    }
+}
+
+function closeRenewModal() {
+    renewModal.classList.remove('active');
+}
+
+async function submitRenew() {
+    const keyId = document.getElementById('renew-key-id').value;
+    const days = parseInt(document.getElementById('renew-days').value) || 0;
+
+    if (days <= 0) {
+        showToast('续费天数必须大于 0', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/keys/' + keyId + '/renew', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authToken
+            },
+            body: JSON.stringify({ days: days })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            showToast('续费成功，新增 ' + result.data.addedDays + ' 天，剩余 ' + result.data.remainingDays + ' 天', 'success');
+            closeRenewModal();
+            loadApiKeys();
+        } else {
+            showToast(result.error || '续费失败', 'error');
+        }
+    } catch (err) {
+        showToast('续费失败: ' + err.message, 'error');
+    }
 }

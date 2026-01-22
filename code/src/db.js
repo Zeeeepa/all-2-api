@@ -853,6 +853,54 @@ export class ApiKeyStore {
         ]);
     }
 
+    /**
+     * 续费 - 增加有效期天数
+     * @param {number} id - API 密钥 ID
+     * @param {number} days - 要增加的天数
+     * @returns {object} 续费结果，包含新的过期信息
+     */
+    async renew(id, days) {
+        if (!days || days <= 0) {
+            throw new Error('续费天数必须大于 0');
+        }
+
+        const key = await this.getById(id);
+        if (!key) {
+            throw new Error('密钥不存在');
+        }
+
+        const now = new Date();
+        const createDate = new Date(key.createdAt);
+
+        // 计算当前的过期日期
+        let currentExpireDate;
+        if (key.expiresInDays > 0) {
+            currentExpireDate = new Date(createDate.getTime() + key.expiresInDays * 24 * 60 * 60 * 1000);
+        } else {
+            // 如果之前没有设置过期时间，从现在开始计算
+            currentExpireDate = now;
+        }
+
+        // 如果已过期，从现在开始续费；否则从当前过期日期开始续费
+        const baseDate = currentExpireDate < now ? now : currentExpireDate;
+        const newExpireDate = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+        // 计算新的 expires_in_days（从创建日期到新过期日期的天数）
+        const newExpiresInDays = Math.ceil((newExpireDate - createDate) / (24 * 60 * 60 * 1000));
+
+        await this.db.execute(`
+            UPDATE api_keys SET expires_in_days = ? WHERE id = ?
+        `, [newExpiresInDays, id]);
+
+        return {
+            previousExpiresInDays: key.expiresInDays,
+            newExpiresInDays: newExpiresInDays,
+            addedDays: days,
+            expireDate: newExpireDate.toISOString(),
+            remainingDays: Math.ceil((newExpireDate - now) / (24 * 60 * 60 * 1000))
+        };
+    }
+
     async getById(id) {
         const [rows] = await this.db.execute('SELECT * FROM api_keys WHERE id = ?', [id]);
         if (rows.length === 0) return null;

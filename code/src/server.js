@@ -1239,6 +1239,31 @@ app.put('/api/keys/:id/limits', authMiddleware, async (req, res) => {
     }
 });
 
+// 续费 API 密钥（增加有效期天数）
+app.post('/api/keys/:id/renew', authMiddleware, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const key = await apiKeyStore.getById(id);
+        if (!key) {
+            return res.status(404).json({ success: false, error: '密钥不存在' });
+        }
+        // 检查权限（只有管理员可以续费）
+        if (!req.user.isAdmin) {
+            return res.status(403).json({ success: false, error: '只有管理员可以续费' });
+        }
+
+        const { days } = req.body;
+        if (!days || days <= 0) {
+            return res.status(400).json({ success: false, error: '续费天数必须大于 0' });
+        }
+
+        const result = await apiKeyStore.renew(id, parseInt(days));
+        res.json({ success: true, data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // 获取 API 密钥的当前用量统计（包含限制对比）
 app.get('/api/keys/:id/limits-status', authMiddleware, async (req, res) => {
     try {
