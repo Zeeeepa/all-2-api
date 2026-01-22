@@ -869,35 +869,26 @@ export class ApiKeyStore {
             throw new Error('密钥不存在');
         }
 
-        const now = new Date();
-        const createDate = new Date(key.createdAt);
-
-        // 计算当前的过期日期
-        let currentExpireDate;
-        if (key.expiresInDays > 0) {
-            currentExpireDate = new Date(createDate.getTime() + key.expiresInDays * 24 * 60 * 60 * 1000);
-        } else {
-            // 如果之前没有设置过期时间，从现在开始计算
-            currentExpireDate = now;
-        }
-
-        // 如果已过期，从现在开始续费；否则从当前过期日期开始续费
-        const baseDate = currentExpireDate < now ? now : currentExpireDate;
-        const newExpireDate = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
-
-        // 计算新的 expires_in_days（从创建日期到新过期日期的天数）
-        const newExpiresInDays = Math.ceil((newExpireDate - createDate) / (24 * 60 * 60 * 1000));
+        // 直接在原有天数基础上增加
+        const previousDays = key.expiresInDays || 0;
+        const newExpiresInDays = previousDays + days;
 
         await this.db.execute(`
             UPDATE api_keys SET expires_in_days = ? WHERE id = ?
         `, [newExpiresInDays, id]);
 
+        // 计算新的过期日期和剩余天数（用于返回显示）
+        const now = new Date();
+        const createDate = new Date(key.createdAt);
+        const newExpireDate = new Date(createDate.getTime() + newExpiresInDays * 24 * 60 * 60 * 1000);
+        const remainingDays = Math.max(0, Math.ceil((newExpireDate - now) / (24 * 60 * 60 * 1000)));
+
         return {
-            previousExpiresInDays: key.expiresInDays,
+            previousExpiresInDays: previousDays,
             newExpiresInDays: newExpiresInDays,
             addedDays: days,
             expireDate: newExpireDate.toISOString(),
-            remainingDays: Math.ceil((newExpireDate - now) / (24 * 60 * 60 * 1000))
+            remainingDays: remainingDays
         };
     }
 
