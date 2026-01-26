@@ -39,7 +39,7 @@ ALL-2-API 是一个突破客户端限制的 API 代理服务，将原本仅限�
 - **多协议智能转换**：支持 OpenAI、Claude 协议智能转换，实现跨协议模型调用
 
 ### 🚀 突破限制，提升效率
-- **突破官方限制**：利用 OAuth 授权机制，有效突破 Kiro、Gemini Antigravity 等服务的速率和配额限制
+- **突破官方限制**：利用 OAuth 授权机制
 - **免费高级模型**：通过 Kiro API 免费使用 Claude Opus 4.5，通过 Gemini Antigravity 使用 Gemini 3 Pro，降低使用成本
 - **智能账号池调度**：支持多账号轮询、自动故障转移，确保服务高可用
 
