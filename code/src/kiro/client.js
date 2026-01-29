@@ -117,7 +117,7 @@ export class KiroClient {
      */
     static async fromDatabase() {
         const store = await CredentialStore.create();
-        const creds = store.getActive();
+        const creds = await store.getActive();
 
         if (!creds) {
             throw new Error('数据库中没有活跃的凭据，请先添加凭据');
@@ -140,7 +140,7 @@ export class KiroClient {
      */
     static async fromDatabaseById(id) {
         const store = await CredentialStore.create();
-        const creds = store.getById(id);
+        const creds = await store.getById(id);
 
         if (!creds) {
             throw new Error(`未找到 ID 为 ${id} 的凭据`);
@@ -163,7 +163,7 @@ export class KiroClient {
      */
     static async fromDatabaseByName(name) {
         const store = await CredentialStore.create();
-        const creds = store.getByName(name);
+        const creds = await store.getByName(name);
 
         if (!creds) {
             throw new Error(`未找到名称为 "${name}" 的凭据`);
@@ -342,18 +342,30 @@ export class KiroClient {
         // 处理 system prompt
         let systemPrompt = options.system || '';
 
-        // 处理 tools
+        // 处理 tools（校验格式，避免 ValidationException）
         let toolsContext = {};
         if (options.tools && Array.isArray(options.tools) && options.tools.length > 0) {
-            toolsContext = {
-                tools: options.tools.map(tool => ({
-                    toolSpecification: {
-                        name: tool.name,
-                        description: tool.description || "",
-                        inputSchema: { json: tool.input_schema || {} }
+            const validTools = options.tools
+                .filter(tool => tool && tool.name) // 确保有 name
+                .map(tool => {
+                    // 确保 input_schema 是有效的对象
+                    let inputSchema = tool.input_schema;
+                    if (!inputSchema || typeof inputSchema !== 'object') {
+                        inputSchema = { type: 'object', properties: {} };
                     }
-                }))
-            };
+                    
+                    return {
+                        toolSpecification: {
+                            name: tool.name,
+                            description: tool.description || '',
+                            inputSchema: { json: inputSchema }
+                        }
+                    };
+                });
+            
+            if (validTools.length > 0) {
+                toolsContext = { tools: validTools };
+            }
         }
 
         // 如果第一条是 user 消息，将 system prompt 合并进去
@@ -460,20 +472,36 @@ export class KiroClient {
         if (Array.isArray(msg.content)) {
             for (const part of msg.content) {
                 if (part.type === 'text') {
-                    userInputMessage.content += part.text;
+                    userInputMessage.content += part.text || '';
                 } else if (part.type === 'tool_result') {
+                    // 校验必要字段，避免 ValidationException
+                    const toolUseId = part.tool_use_id;
+                    if (!toolUseId) {
+                        log.warn('tool_result 缺少 tool_use_id，跳过');
+                        continue;
+                    }
+                    
+                    // 确保 content 是有效的文本
+                    let resultContent = this._getContentText(part.content);
+                    if (!resultContent) {
+                        resultContent = part.is_error ? 'Error occurred' : 'Success';
+                    }
+                    
                     toolResults.push({
-                        content: [{ text: this._getContentText(part.content) }],
+                        content: [{ text: resultContent }],
                         status: part.is_error ? 'error' : 'success',
-                        toolUseId: part.tool_use_id
+                        toolUseId
                     });
                 } else if (part.type === 'image') {
-                    images.push({
-                        format: part.source.media_type.split('/')[1],
-                        source: {
-                            bytes: part.source.data
-                        }
-                    });
+                    // 校验图片数据
+                    if (part.source?.media_type && part.source?.data) {
+                        images.push({
+                            format: part.source.media_type.split('/')[1] || 'png',
+                            source: {
+                                bytes: part.source.data
+                            }
+                        });
+                    }
                 }
             }
         } else {
@@ -522,12 +550,30 @@ export class KiroClient {
         if (Array.isArray(msg.content)) {
             for (const part of msg.content) {
                 if (part.type === 'text') {
-                    assistantResponseMessage.content += part.text;
+                    assistantResponseMessage.content += part.text || '';
                 } else if (part.type === 'tool_use') {
+                    // 校验必要字段，避免 ValidationException
+                    const toolUseId = part.id || `tool_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+                    const name = part.name || 'unknown_tool';
+                    
+                    // 确保 input 是有效的对象
+                    let input = part.input;
+                    if (input === undefined || input === null) {
+                        input = {};
+                    } else if (typeof input === 'string') {
+                        try {
+                            input = JSON.parse(input);
+                        } catch {
+                            input = { raw: input };
+                        }
+                    } else if (typeof input !== 'object') {
+                        input = { value: input };
+                    }
+                    
                     toolUses.push({
-                        input: part.input,
-                        name: part.name,
-                        toolUseId: part.id
+                        input,
+                        name,
+                        toolUseId
                     });
                 }
             }
