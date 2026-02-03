@@ -416,6 +416,11 @@ export class KiroClient {
         // 处理 system prompt
         let systemPrompt = options.system || '';
 
+        // 自动添加工具使用规范，减少 "Error writing file" 错误
+        if (KIRO_CONSTANTS.TOOL_USE_GUIDELINES) {
+            systemPrompt = (systemPrompt ? systemPrompt + '\n\n' : '') + KIRO_CONSTANTS.TOOL_USE_GUIDELINES;
+        }
+
         // 处理 tools（校验格式，避免 ValidationException）
         let toolsContext = {};
         if (options.tools && Array.isArray(options.tools) && options.tools.length > 0) {

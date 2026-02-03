@@ -50,6 +50,23 @@ export const KIRO_CONSTANTS = {
     // true: 压缩上下文后重试
     // false: 直接返回错误提示用户重新打开对话
     ENABLE_CONTEXT_COMPRESSION: false,
+
+    // 工具使用规范 - 自动添加到 system prompt，减少 "Error writing file" 错误
+    TOOL_USE_GUIDELINES: `
+<file_editing_rules>
+CRITICAL: Follow these rules to avoid "Error writing file" errors:
+
+1. ALWAYS read the file first before editing - use the read tool to get current content
+2. old_string must EXACTLY match the file content (including all spaces, indentation, newlines)
+3. Include 3-5 lines of context before and after the change point to ensure uniqueness
+4. Make small, focused changes - one edit at a time
+5. If edit fails, re-read the file and try again with the exact content
+
+Common errors:
+- "not found": old_string doesn't match - re-read file first
+- "not unique": add more context lines to old_string
+</file_editing_rules>
+`,
 };
 
 /**

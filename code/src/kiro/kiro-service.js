@@ -181,6 +181,11 @@ export class KiroService {
             }
         }
 
+        // 自动添加工具使用规范，减少 "Error writing file" 错误
+        if (KIRO_CONSTANTS.TOOL_USE_GUIDELINES) {
+            systemPrompt = (systemPrompt ? systemPrompt + '\n\n' : '') + KIRO_CONSTANTS.TOOL_USE_GUIDELINES;
+        }
+
         // 合并相邻相同 role 的消息
         const mergedMessages = [];
         for (const msg of messages) {
