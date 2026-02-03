@@ -742,9 +742,10 @@ export class KiroService {
                     yield { type: 'content_block_delta', delta: { type: 'text_delta', text: formattedResult } };
                     return;
                 } else {
-                    // 搜索失败，返回错误信息
+                    // MCP 搜索失败，返回明确的错误信息
                     console.error('[KiroService] MCP 搜索失败:', searchResult.error);
-                    yield { type: 'content_block_delta', delta: { type: 'text_delta', text: `搜索失败: ${searchResult.error}` } };
+                    const errorMessage = `抱歉，当前环境中 web_search 工具不可用（${searchResult.error || '网络错误'}）。\n\n我将根据已有知识为您提供信息。`;
+                    yield { type: 'content_block_delta', delta: { type: 'text_delta', text: errorMessage } };
                     return;
                 }
             } else {
@@ -923,7 +924,8 @@ export class KiroService {
                     return { content: formattedResult, toolCalls: [] };
                 } else {
                     console.error('[KiroService] MCP 搜索失败 (非流式):', searchResult.error);
-                    return { content: `搜索失败: ${searchResult.error}`, toolCalls: [] };
+                    const errorMessage = `抱歉，当前环境中 web_search 工具不可用（${searchResult.error || '网络错误'}）。\n\n我将根据已有知识为您提供信息。`;
+                    return { content: errorMessage, toolCalls: [] };
                 }
             }
         }
