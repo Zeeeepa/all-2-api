@@ -2,10 +2,10 @@ import mysql from 'mysql2/promise';
 
 // MySQL 连接配置
 const DB_CONFIG = {
-    host: process.env.MYSQL_HOST || '43.228.76.217',
-    port: parseInt(process.env.MYSQL_PORT || '13306'),
+    host: process.env.MYSQL_HOST || '127.0.0.1',
+    port: parseInt(process.env.MYSQL_PORT || '3306'),
     user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || '4561230wW?',
+    password: process.env.MYSQL_PASSWORD || 'root',
     database: process.env.MYSQL_DATABASE || 'kiro_api',
     waitForConnections: true,
     connectionLimit: 10,
@@ -458,10 +458,28 @@ export async function initDatabase() {
             error_count INT DEFAULT 0,
             last_error_at DATETIME,
             last_error_message TEXT,
+            usage_percent DECIMAL(5,2) DEFAULT NULL,
+            usage_reset_at DATETIME DEFAULT NULL,
+            plan_type VARCHAR(50) DEFAULT NULL,
+            usage_updated_at DATETIME DEFAULT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+
+    // 迁移: 为 codex_credentials 表添加用量字段（如果不存在）
+    try {
+        await pool.execute(`ALTER TABLE codex_credentials ADD COLUMN usage_percent DECIMAL(5,2) DEFAULT NULL`);
+    } catch (e) { /* 列已存在 */ }
+    try {
+        await pool.execute(`ALTER TABLE codex_credentials ADD COLUMN usage_reset_at DATETIME DEFAULT NULL`);
+    } catch (e) { /* 列已存在 */ }
+    try {
+        await pool.execute(`ALTER TABLE codex_credentials ADD COLUMN plan_type VARCHAR(50) DEFAULT NULL`);
+    } catch (e) { /* 列已存在 */ }
+    try {
+        await pool.execute(`ALTER TABLE codex_credentials ADD COLUMN usage_updated_at DATETIME DEFAULT NULL`);
+    } catch (e) { /* 列已存在 */ }
 
     // 创建工具调用日志表
     await pool.execute(`
@@ -3937,6 +3955,37 @@ export class CodexCredentialStore {
         ]);
     }
 
+    async updateUsage(id, usage) {
+        // 转换 ISO 8601 日期为 MySQL 格式
+        let resetAt = null;
+        if (usage.usageResetAt) {
+            const date = new Date(usage.usageResetAt);
+            if (!isNaN(date.getTime())) {
+                resetAt = date.toISOString().slice(0, 19).replace('T', ' ');
+            }
+        }
+        
+        await this.db.execute(`
+            UPDATE codex_credentials SET
+                usage_percent = ?,
+                usage_reset_at = ?,
+                plan_type = ?,
+                usage_updated_at = NOW()
+            WHERE id = ?
+        `, [
+            usage.usagePercent !== undefined ? usage.usagePercent : null,
+            resetAt,
+            usage.planType || null,
+            id
+        ]);
+    }
+
+    async batchUpdateUsage(usages) {
+        for (const usage of usages) {
+            await this.updateUsage(usage.id, usage);
+        }
+    }
+
     async getStatistics() {
         const [total] = await this.db.execute('SELECT COUNT(*) as count FROM codex_credentials');
         const [active] = await this.db.execute('SELECT COUNT(*) as count FROM codex_credentials WHERE is_active = 1 AND status = ?', ['active']);
@@ -3969,6 +4018,10 @@ export class CodexCredentialStore {
             errorCount: row.error_count || 0,
             lastErrorAt: row.last_error_at,
             lastErrorMessage: row.last_error_message,
+            usagePercent: row.usage_percent !== null ? parseFloat(row.usage_percent) : null,
+            usageResetAt: row.usage_reset_at,
+            planType: row.plan_type,
+            usageUpdatedAt: row.usage_updated_at,
             createdAt: row.created_at,
             updatedAt: row.updated_at
         };

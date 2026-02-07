@@ -5,6 +5,7 @@
  * 默认: 5个实例，从13004开始
  */
 
+import 'dotenv/config';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';

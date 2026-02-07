@@ -828,9 +828,9 @@ export class CodexService {
     }
 
     /**
-     * 获取使用限制
+     * 获取使用限制（原始数据）
      */
-    async getUsageLimits() {
+    async getUsageLimitsRaw() {
         // 检查 Token 是否需要刷新
         if (this.isTokenExpiringSoon()) {
             log.info(`[Codex] Token 即将过期，正在刷新...`);
@@ -865,6 +865,129 @@ export class CodexService {
                 }
             }
             throw error;
+        }
+    }
+
+    /**
+     * 获取使用限制（格式化数据）
+     */
+    async getUsageLimits() {
+        const raw = await this.getUsageLimitsRaw();
+        log.info(`[Codex] 原始用量数据: ${JSON.stringify(raw)}`);
+        const formatted = CodexService.formatUsage(raw, this.credential);
+        log.info(`[Codex] 格式化后用量数据: ${JSON.stringify(formatted?.summary)}`);
+        return formatted;
+    }
+
+    /**
+     * 格式化用量数据
+     */
+    static formatUsage(raw, credential = {}) {
+        if (!raw) return null;
+
+        const result = {
+            credentialId: credential.id,
+            email: credential.email || credential.name,
+            planType: raw.plan_type || 'unknown',
+            lastUpdated: new Date().toISOString(),
+            
+            // 主窗口配额
+            primaryWindow: null,
+            // 次窗口配额
+            secondaryWindow: null,
+            // Credits
+            credits: raw.credits || null,
+            // 代码审查限制
+            codeReviewLimit: null,
+            
+            // 汇总信息
+            summary: {
+                usedPercent: 0,
+                remainingPercent: 100,
+                resetTime: null,
+                resetTimeFormatted: null
+            }
+        };
+
+        // 解析主窗口
+        if (raw.rate_limit?.primary_window) {
+            const pw = raw.rate_limit.primary_window;
+            // used_percent 可能是 0-1 的小数或 0-100 的百分比
+            // 如果 <= 1 且 > 0，认为是小数格式，需要乘以 100
+            let usedPercent = pw.used_percent || 0;
+            if (usedPercent > 0 && usedPercent <= 1) {
+                usedPercent = usedPercent * 100;
+            }
+            
+            result.primaryWindow = {
+                usedPercent: usedPercent,
+                remainingPercent: 100 - usedPercent,
+                resetAt: pw.reset_at ? new Date(pw.reset_at * 1000).toISOString() : null,
+                resetAtTimestamp: pw.reset_at
+            };
+            
+            // 更新汇总
+            result.summary.usedPercent = usedPercent;
+            result.summary.remainingPercent = 100 - usedPercent;
+            if (pw.reset_at) {
+                result.summary.resetTime = new Date(pw.reset_at * 1000).toISOString();
+                result.summary.resetTimeFormatted = CodexService.formatResetTime(pw.reset_at);
+            }
+        }
+
+        // 解析次窗口
+        if (raw.rate_limit?.secondary_window) {
+            const sw = raw.rate_limit.secondary_window;
+            let swUsedPercent = sw.used_percent || 0;
+            if (swUsedPercent > 0 && swUsedPercent <= 1) {
+                swUsedPercent = swUsedPercent * 100;
+            }
+            result.secondaryWindow = {
+                usedPercent: swUsedPercent,
+                remainingPercent: 100 - swUsedPercent,
+                resetAt: sw.reset_at ? new Date(sw.reset_at * 1000).toISOString() : null,
+                resetAtTimestamp: sw.reset_at
+            };
+        }
+
+        // 解析代码审查限制
+        if (raw.code_review_rate_limit) {
+            const cr = raw.code_review_rate_limit;
+            let crUsedPercent = cr.used_percent || 0;
+            if (crUsedPercent > 0 && crUsedPercent <= 1) {
+                crUsedPercent = crUsedPercent * 100;
+            }
+            result.codeReviewLimit = {
+                usedPercent: crUsedPercent,
+                remainingPercent: 100 - crUsedPercent,
+                resetAt: cr.reset_at ? new Date(cr.reset_at * 1000).toISOString() : null
+            };
+        }
+
+        return result;
+    }
+
+    /**
+     * 格式化重置时间为易读格式
+     */
+    static formatResetTime(timestamp) {
+        if (!timestamp) return null;
+        const resetDate = new Date(timestamp * 1000);
+        const now = new Date();
+        const diffMs = resetDate.getTime() - now.getTime();
+        
+        if (diffMs <= 0) return '已重置';
+        
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (diffHours > 24) {
+            const days = Math.floor(diffHours / 24);
+            return `${days}天后`;
+        } else if (diffHours > 0) {
+            return `${diffHours}小时${diffMinutes}分钟后`;
+        } else {
+            return `${diffMinutes}分钟后`;
         }
     }
 

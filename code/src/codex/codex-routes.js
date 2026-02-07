@@ -4,6 +4,16 @@
 import { CodexCredentialStore } from '../db.js';
 import { CodexService, CODEX_MODELS } from './codex-service.js';
 import { startCodexOAuth, completeCodexOAuth, refreshCodexToken } from './codex-auth.js';
+import {
+    startCodexRegisterTask,
+    getCodexRegisterTask,
+    getAllCodexRegisterTasks,
+    cancelCodexRegisterTask,
+    REGISTER_CONFIG,
+    startLoginTask,
+    getLoginTask,
+    getAllLoginTasks
+} from '../../register/codex-register.js';
 
 /**
  * 设置 Codex 路由
@@ -111,6 +121,45 @@ export function setupCodexRoutes(app, authMiddleware) {
         }
     });
 
+    // 批量刷新所有凭证 Token
+    app.post('/api/codex/credentials/batch-refresh', authMiddleware, async (req, res) => {
+        try {
+            const store = await CodexCredentialStore.create();
+            const credentials = await store.getAll();
+            
+            if (credentials.length === 0) {
+                return res.json({ success: true, message: '没有凭证需要刷新', data: { total: 0, success: 0, failed: 0 } });
+            }
+
+            const results = { total: credentials.length, success: 0, failed: 0, details: [] };
+
+            for (const credential of credentials) {
+                try {
+                    if (!credential.refreshToken) {
+                        results.failed++;
+                        results.details.push({ id: credential.id, email: credential.email, status: 'skipped', error: '无 refreshToken' });
+                        continue;
+                    }
+                    const newTokens = await refreshCodexToken(credential.refreshToken);
+                    await store.updateTokens(credential.id, newTokens);
+                    results.success++;
+                    results.details.push({ id: credential.id, email: credential.email || credential.name, status: 'success' });
+                } catch (err) {
+                    results.failed++;
+                    results.details.push({ id: credential.id, email: credential.email || credential.name, status: 'failed', error: err.message });
+                }
+            }
+
+            res.json({ 
+                success: true, 
+                message: `批量刷新完成: 成功 ${results.success}, 失败 ${results.failed}`,
+                data: results 
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // 测试凭证
     app.post('/api/codex/credentials/:id/test', authMiddleware, async (req, res) => {
         try {
@@ -139,6 +188,141 @@ export function setupCodexRoutes(app, authMiddleware) {
             const store = await CodexCredentialStore.create();
             const stats = await store.getStatistics();
             res.json({ success: true, data: stats });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取单个凭证的用量（从 API 获取并更新数据库）
+    app.get('/api/codex/credentials/:id/usage', authMiddleware, async (req, res) => {
+        try {
+            const id = parseInt(req.params.id);
+            const store = await CodexCredentialStore.create();
+            const service = await CodexService.fromDatabase(id);
+            const usage = await service.getUsageLimits();
+            
+            // 更新数据库中的用量信息
+            if (usage) {
+                await store.updateUsage(id, {
+                    usagePercent: usage.summary?.usedPercent || 0,
+                    usageResetAt: usage.summary?.resetTime || null,
+                    planType: usage.planType || null
+                });
+            }
+            
+            res.json({ success: true, data: usage });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 刷新单个凭证的用量（获取最新用量并更新数据库）
+    app.post('/api/codex/credentials/:id/refresh-usage', authMiddleware, async (req, res) => {
+        try {
+            const id = parseInt(req.params.id);
+            const store = await CodexCredentialStore.create();
+            const service = await CodexService.fromDatabase(id);
+            const usage = await service.getUsageLimits();
+            
+            // 更新数据库中的用量信息
+            if (usage) {
+                await store.updateUsage(id, {
+                    usagePercent: usage.summary?.usedPercent || 0,
+                    usageResetAt: usage.summary?.resetTime || null,
+                    planType: usage.planType || null
+                });
+            }
+            
+            // 返回更新后的凭证信息
+            const updatedCredential = await store.getById(id);
+            res.json({ success: true, data: updatedCredential, usage });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取所有凭证的用量（从数据库读取缓存的用量）
+    app.get('/api/codex/usage', authMiddleware, async (req, res) => {
+        try {
+            const store = await CodexCredentialStore.create();
+            const credentials = await store.getAll();
+            
+            const results = {
+                timestamp: new Date().toISOString(),
+                total: credentials.length,
+                usages: credentials.map(c => ({
+                    id: c.id,
+                    email: c.email || c.name,
+                    usagePercent: c.usagePercent,
+                    usageResetAt: c.usageResetAt,
+                    planType: c.planType,
+                    usageUpdatedAt: c.usageUpdatedAt
+                }))
+            };
+
+            res.json({ success: true, data: results });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 批量刷新所有凭证的用量（从 API 获取并更新数据库）
+    app.post('/api/codex/usage/refresh', authMiddleware, async (req, res) => {
+        try {
+            const store = await CodexCredentialStore.create();
+            const credentials = await store.getAll();
+            
+            const results = {
+                timestamp: new Date().toISOString(),
+                total: credentials.length,
+                success: 0,
+                failed: 0,
+                usages: []
+            };
+
+            // 并发获取所有凭证的用量
+            const usagePromises = credentials.map(async (credential) => {
+                try {
+                    const service = new CodexService(credential);
+                    const usage = await service.getUsageLimits();
+                    
+                    // 更新数据库
+                    if (usage) {
+                        await store.updateUsage(credential.id, {
+                            usagePercent: usage.summary?.usedPercent || 0,
+                            usageResetAt: usage.summary?.resetTime || null,
+                            planType: usage.planType || null
+                        });
+                    }
+                    
+                    return { 
+                        id: credential.id, 
+                        email: credential.email || credential.name,
+                        success: true, 
+                        usage 
+                    };
+                } catch (error) {
+                    return { 
+                        id: credential.id, 
+                        email: credential.email || credential.name,
+                        success: false, 
+                        error: error.message 
+                    };
+                }
+            });
+
+            const usageResults = await Promise.all(usagePromises);
+            
+            for (const result of usageResults) {
+                if (result.success) {
+                    results.success++;
+                } else {
+                    results.failed++;
+                }
+                results.usages.push(result);
+            }
+
+            res.json({ success: true, data: results });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
         }
@@ -176,6 +360,110 @@ export function setupCodexRoutes(app, authMiddleware) {
                 });
                 res.json({ success: true, message: '凭证已保存', data: { id, email: credentials.email } });
             }
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============ 自动注册 ============
+
+    // 获取注册配置
+    app.get('/api/codex/register/config', authMiddleware, (req, res) => {
+        res.json({
+            success: true,
+            data: {
+                email: {
+                    baseUrl: REGISTER_CONFIG.email.baseUrl,
+                    suffix: REGISTER_CONFIG.email.suffix,
+                    hasToken: !!REGISTER_CONFIG.email.token,
+                },
+                browser: REGISTER_CONFIG.browser,
+                hasProxy: !!REGISTER_CONFIG.proxy,
+            }
+        });
+    });
+
+    // 启动注册任务
+    app.post('/api/codex/register/start', authMiddleware, async (req, res) => {
+        try {
+            const { count = 1 } = req.body;
+            if (count < 1 || count > 100) {
+                return res.status(400).json({ success: false, error: '注册数量必须在 1-100 之间' });
+            }
+            const taskId = await startCodexRegisterTask(count);
+            res.json({ success: true, message: '注册任务已启动', data: { taskId } });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取所有注册任务
+    app.get('/api/codex/register/tasks', authMiddleware, (req, res) => {
+        try {
+            const tasks = getAllCodexRegisterTasks();
+            res.json({ success: true, data: tasks });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取单个注册任务状态
+    app.get('/api/codex/register/tasks/:taskId', authMiddleware, (req, res) => {
+        try {
+            const task = getCodexRegisterTask(req.params.taskId);
+            if (!task) {
+                return res.status(404).json({ success: false, error: '任务不存在' });
+            }
+            res.json({ success: true, data: task.toJSON() });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 取消注册任务
+    app.post('/api/codex/register/tasks/:taskId/cancel', authMiddleware, (req, res) => {
+        try {
+            const success = cancelCodexRegisterTask(req.params.taskId);
+            if (success) {
+                res.json({ success: true, message: '任务取消请求已发送' });
+            } else {
+                res.status(400).json({ success: false, error: '任务不存在或无法取消' });
+            }
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // ============ 批量 OAuth 登录 ============
+
+    // 启动登录任务（从 accounts.txt 读取账号进行 OAuth 授权）
+    app.post('/api/codex/login/start', authMiddleware, async (req, res) => {
+        try {
+            const { id: taskId } = await startLoginTask();
+            res.json({ success: true, message: '登录任务已启动', data: { taskId } });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取所有登录任务
+    app.get('/api/codex/login/tasks', authMiddleware, (req, res) => {
+        try {
+            const tasks = getAllLoginTasks();
+            res.json({ success: true, data: tasks });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 获取单个登录任务状态
+    app.get('/api/codex/login/tasks/:taskId', authMiddleware, (req, res) => {
+        try {
+            const task = getLoginTask(req.params.taskId);
+            if (!task) {
+                return res.status(404).json({ success: false, error: '任务不存在' });
+            }
+            res.json({ success: true, data: task });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
         }
