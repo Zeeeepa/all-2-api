@@ -16,7 +16,6 @@ export function setupCodexRoutes(app, authMiddleware) {
         try {
             const store = await CodexCredentialStore.create();
             const credentials = await store.getAll();
-            // 隐藏敏感信息
             const safeCredentials = credentials.map(c => ({
                 ...c,
                 accessToken: c.accessToken ? '***' : null,
@@ -37,7 +36,6 @@ export function setupCodexRoutes(app, authMiddleware) {
             if (!credential) {
                 return res.status(404).json({ success: false, error: '凭证不存在' });
             }
-            // 隐藏敏感信息
             res.json({
                 success: true,
                 data: {
@@ -52,30 +50,19 @@ export function setupCodexRoutes(app, authMiddleware) {
         }
     });
 
-    // 创建凭证（手动添加）
+    // 创建凭证
     app.post('/api/codex/credentials', authMiddleware, async (req, res) => {
         try {
             const { name, refreshToken, email, accountId, note } = req.body;
             if (!name || !refreshToken) {
                 return res.status(400).json({ success: false, error: '名称和 refreshToken 是必填项' });
             }
-
             const store = await CodexCredentialStore.create();
-
-            // 检查名称是否已存在
             const existing = await store.getByName(name);
             if (existing) {
                 return res.status(400).json({ success: false, error: '凭证名称已存在' });
             }
-
-            const id = await store.create({
-                name,
-                refreshToken,
-                email: email || null,
-                accountId: accountId || null,
-                note: note || null
-            });
-
+            const id = await store.create({ name, refreshToken, email: email || null, accountId: accountId || null, note: note || null });
             res.json({ success: true, data: { id }, message: '凭证创建成功' });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
@@ -90,7 +77,6 @@ export function setupCodexRoutes(app, authMiddleware) {
             if (!credential) {
                 return res.status(404).json({ success: false, error: '凭证不存在' });
             }
-
             await store.update(parseInt(req.params.id), req.body);
             res.json({ success: true, message: '凭证更新成功' });
         } catch (error) {
@@ -117,10 +103,8 @@ export function setupCodexRoutes(app, authMiddleware) {
             if (!credential) {
                 return res.status(404).json({ success: false, error: '凭证不存在' });
             }
-
             const newTokens = await refreshCodexToken(credential.refreshToken);
             await store.updateTokens(credential.id, newTokens);
-
             res.json({ success: true, message: 'Token 刷新成功', data: { email: newTokens.email, expiresAt: newTokens.expiresAt } });
         } catch (error) {
             res.status(500).json({ success: false, error: error.message });
@@ -162,7 +146,6 @@ export function setupCodexRoutes(app, authMiddleware) {
 
     // ============ OAuth 认证 ============
 
-    // 启动 OAuth 流程
     app.post('/api/codex/oauth/start', authMiddleware, async (req, res) => {
         try {
             const result = await startCodexOAuth();
@@ -172,34 +155,24 @@ export function setupCodexRoutes(app, authMiddleware) {
         }
     });
 
-    // OAuth 回调处理
     app.get('/api/codex/oauth/callback', async (req, res) => {
         try {
             const { code, state } = req.query;
             if (!code || !state) {
                 return res.status(400).json({ success: false, error: '缺少 code 或 state 参数' });
             }
-
             const credentials = await completeCodexOAuth(code, state);
-
-            // 保存到数据库
             const store = await CodexCredentialStore.create();
             const name = credentials.email || `codex-${Date.now()}`;
-
-            // 检查是否已存在
             let existing = await store.getByEmail(credentials.email);
             if (existing) {
                 await store.updateTokens(existing.id, credentials);
                 res.json({ success: true, message: '凭证已更新', data: { id: existing.id, email: credentials.email } });
             } else {
                 const id = await store.create({
-                    name,
-                    email: credentials.email,
-                    accountId: credentials.accountId,
-                    accessToken: credentials.accessToken,
-                    refreshToken: credentials.refreshToken,
-                    idToken: credentials.idToken,
-                    expiresAt: credentials.expiresAt
+                    name, email: credentials.email, accountId: credentials.accountId,
+                    accessToken: credentials.accessToken, refreshToken: credentials.refreshToken,
+                    idToken: credentials.idToken, expiresAt: credentials.expiresAt
                 });
                 res.json({ success: true, message: '凭证已保存', data: { id, email: credentials.email } });
             }
@@ -213,68 +186,42 @@ export function setupCodexRoutes(app, authMiddleware) {
     app.get('/api/codex/models', (req, res) => {
         res.json({
             success: true,
-            data: CODEX_MODELS.map(id => ({
-                id,
-                object: 'model',
-                created: Math.floor(Date.now() / 1000),
-                owned_by: 'openai'
-            }))
+            data: CODEX_MODELS.map(id => ({ id, object: 'model', created: Math.floor(Date.now() / 1000), owned_by: 'openai' }))
         });
     });
 
     // ============ Codex OpenAI 兼容聊天端点 ============
 
-    // OpenAI 兼容格式 - /codex/v1/chat/completions
     app.post('/codex/v1/chat/completions', async (req, res) => {
         const startTime = Date.now();
         const requestId = 'chatcmpl-' + Date.now() + Math.random().toString(36).substring(2, 8);
 
         try {
-            // 检查请求体是否有效
             if (!req.body || typeof req.body !== 'object') {
-                console.error(`[Codex] 请求体无效或为空: ${typeof req.body}`);
-                return res.status(400).json({
-                    error: {
-                        message: '请求体无效，请确保发送有效的 JSON 数据',
-                        type: 'invalid_request_error'
-                    }
-                });
+                return res.status(400).json({ error: { message: '请求体无效', type: 'invalid_request_error' } });
             }
 
             const { model, messages, stream } = req.body;
-
-            // 验证模型
             const targetModel = model || 'gpt-5';
             if (!CODEX_MODELS.includes(targetModel)) {
-                return res.status(400).json({
-                    error: {
-                        message: `不支持的模型: ${targetModel}，支持的模型: ${CODEX_MODELS.join(', ')}`,
-                        type: 'invalid_request_error'
-                    }
-                });
+        return res.status(400).json({ error: { message: `不支持的模型: ${targetModel}`, type: 'invalid_request_error' } });
             }
 
-            // 获取随机可用凭证
             const service = await CodexService.fromRandomActive();
 
-            // 转换消息格式
             let systemPrompt = '';
             const convertedMessages = [];
-
             for (const msg of messages) {
                 if (msg.role === 'system') {
                     systemPrompt += (systemPrompt ? '\n' : '') + (typeof msg.content === 'string' ? msg.content : msg.content.map(c => c.text || '').join(''));
                 } else if (msg.role === 'user' || msg.role === 'assistant') {
                     let content = msg.content;
-                    if (Array.isArray(content)) {
-                        content = content.map(c => c.type === 'text' ? c.text : '').join('');
-                    }
+                    if (Array.isArray(content)) content = content.map(c => c.type === 'text' ? c.text : '').join('');
                     convertedMessages.push({ role: msg.role, content });
                 }
             }
 
             if (stream) {
-                // 流式响应
                 res.setHeader('Content-Type', 'text/event-stream');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
@@ -282,273 +229,164 @@ export function setupCodexRoutes(app, authMiddleware) {
                 try {
                     for await (const event of service.chatStream(targetModel, convertedMessages, { system: systemPrompt })) {
                         if (event.type === 'content' && event.data) {
-                            const chunk = {
-                             id: requestId,
-                                object: 'chat.completion.chunk',
-                                created: Math.floor(Date.now() / 1000),
-                                model: targetModel,
-                                choices: [{
-                                    index: 0,
-                                    delta: { content: event.data },
-                                    finish_reason: null
-                                }]
-                            };
-                            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+                            res.write(`data: ${JSON.stringify({
+                                id: requestId, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: targetModel,
+                                choices: [{ index: 0, delta: { content: event.data }, finish_reason: null }]
+                            })}\n\n`);
                         }
                     }
-
-                    // 发送结束标记
-                    const finalChunk = {
-                        id: requestId,
-                        object: 'chat.completion.chunk',
-                        created: Math.floor(Date.now() / 1000),
-                        model: targetModel,
-                        choices: [{
-                            index: 0,
-                            delta: {},
-                            finish_reason: 'stop'
-                        }]
-                    };
-                    res.write(`data: ${JSON.stringify(finalChunk)}\n\n`);
+                    res.write(`data: ${JSON.stringify({
+                        id: requestId, object: 'chat.completion.chunk', created: Math.floor(Date.now() / 1000), model: targetModel,
+                        choices: [{ index: 0, delta: {}, finish_reason: 'stop' }]
+                    })}\n\n`);
                     res.write('data: [DONE]\n\n');
                     res.end();
                 } catch (streamError) {
-                    console.error(`[Codex] 流式请求错误:`, streamError.message);
                     res.write(`data: ${JSON.stringify({ error: { message: streamError.message, type: 'server_error' } })}\n\n`);
                     res.end();
                 }
             } else {
-                // 非流式响应
                 const response = await service.chat(targetModel, convertedMessages, { system: systemPrompt });
-
                 const inputTokens = Math.ceil(JSON.stringify(messages).length / 4);
                 const outputTokens = Math.ceil(response.length / 4);
-
                 res.json({
-                    id: requestId,
-                    object: 'chat.completion',
-                    created: Math.floor(Date.now() / 1000),
-                    model: targetModel,
-                    choices: [{
-                        index: 0,
-                        message: { role: 'assistant', content: response },
-                        finish_reason: 'stop'
-                    }],
-                    usage: {
-                        prompt_tokens: inputTokens,
-                        completion_tokens: outputTokens,
-                        total_tokens: inputTokens + outputTokens
-                    }
+                    id: requestId, object: 'chat.completion', created: Math.floor(Date.now() / 1000), model: targetModel,
+                    choices: [{ index: 0, message: { role: 'assistant', content: response }, finish_reason: 'stop' }],
+                    usage: { prompt_tokens: inputTokens, completion_tokens: outputTokens, total_tokens: inputTokens + outputTokens }
                 });
             }
         } catch (error) {
-            console.error(`[Codex] 聊天请求错误:`, error.message);
-            res.status(500).json({
-                error: {
-                    message: error.message,
-                    type: 'server_error'
-                }
-            });
+            res.status(500).json({ error: { message: error.message, type: 'server_error' } });
         }
     });
 
-    // OpenAI 兼容格式 - 模型列表
     app.get('/codex/v1/models', (req, res) => {
         res.json({
             object: 'list',
-            data: CODEX_MODELS.map(id => ({
-                id,
-                object: 'model',
-                created: Math.floor(Date.now() / 1000),
-                owned_by: 'openai'
-            }))
+            data: CODEX_MODELS.map(id => ({ id, object: 'model', created: Math.floor(Date.now() / 1000), owned_by: 'openai' }))
         });
     });
 
     // ============ Codex 原生 API 端点 ============
+    // 完整支持工具调用 (function_call / function_call_output)
 
-    // Codex 原生格式 - /codex/responses (SSE 流式)
     app.post('/codex/responses', async (req, res) => {
         const startTime = Date.now();
         const responseId = 'resp_' + Date.now() + Math.random().toString(36).substring(2, 8);
 
         try {
-            // 检查请求体是否有效
             if (!req.body || typeof req.body !== 'object') {
-                console.error(`[Codex] /codex/responses 请求体无效`);
-                return res.status(400).json({
-                    error: {
-                        message: '请求体无效',
-                        type: 'invalid_request_error'
-                    }
-                });
+                return res.status(400).json({ error: { message: '请求体无效', type: 'invalid_request_error' } });
             }
 
-            const { model, input, instructions, stream, reasoning, include, prompt_cache_key } = req.body;
-
-            // 验证模型
+            const { model, input, instructions, tools, tool_choice, reasoning } = req.body;
             const targetModel = model || 'gpt-5';
             if (!CODEX_MODELS.includes(targetModel)) {
-                return res.status(400).json({
-                    error: {
-                        message: `不支持的模型: ${targetModel}，支持的模型: ${CODEX_MODELS.join(', ')}`,
-                        type: 'invalid_request_error'
-                    }
-                });
+                return res.status(400).json({ error: { message: `不支持的模型: ${targetModel}`, type: 'invalid_request_error' } });
             }
 
-            // 获取随机可用凭证
             const service = await CodexService.fromRandomActive();
 
-            // 设置 SSE 响应头
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
 
-            // 将 Codex 原生 input 格式转换为 messages 格式
-            const messages = [];
-            if (Array.isArray(input)) {
-                for (const item of input) {
-                    if (item.type === 'message' && item.role && item.content) {
-                        let textContent = '';
-                        if (Array.isArray(item.content)) {
-                            textContent = item.content
-                                .map(c => c.text || '')
-                                .join('');
-                        } else if (typeof item.content === 'string') {
-                            textContent = item.content;
-                        }
-                        if (textContent) {
-                            messages.push({ role: item.role, content: textContent });
-                        }
-                    }
-                }
-            }
-
+            // 解析 input（支持 function_call / function_call_output）
+            const messages = Array.isArray(input) ? input : [];
             const outputItemId = 'item_' + Date.now();
             let fullText = '';
+            let functionCallIndex = 0;
+            const pendingToolCalls = [];
 
-            // 发送 response.created 事件
+            const options = {
+                system: instructions,
+                tools: tools,
+                toolChoice: tool_choice,
+                reasoningEffort: reasoning?.effort || 'high',
+                cwd: extractEnvValue(input, 'cwd'),
+                sandboxMode: extractEnvValue(input, 'sandbox_mode'),
+                approvalPolicy: extractEnvValue(input, 'approval_policy'),
+                networkAccess: extractEnvValue(input, 'network_access'),
+                parallelToolCalls: req.body.parallel_tool_calls
+            };
+
             res.write(`data: ${JSON.stringify({
                 type: 'response.created',
-                response: {
-                    id: responseId,
-                    object: 'response',
-                    created_at: Math.floor(startTime / 1000),
-                    model: targetModel,
-                    status: 'in_progress'
-                }
-            })}\n\n`);
-
-            // 发送 response.output_item.added 事件
-            res.write(`data: ${JSON.stringify({
-                type: 'response.output_item.added',
-                output_index: 0,
-                item: {
-                    id: outputItemId,
-                    type: 'message',
-                    role: 'assistant',
-                    content: []
-                }
-            })}\n\n`);
-
-            // 发送 response.content_part.added 事件
-            res.write(`data: ${JSON.stringify({
-                type: 'response.content_part.added',
-                item_id: outputItemId,
-                output_index: 0,
-                content_index: 0,
-                part: { type: 'output_text', text: '' }
+                response: { id: responseId, object: 'response', created_at: Math.floor(startTime / 1000), model: targetModel, status: 'in_progress' }
             })}\n\n`);
 
             try {
-                for await (const event of service.chatStream(targetModel, messages, { system: instructions })) {
+                for await (const event of service.chatStream(targetModel, messages, options)) {
                     if (event.type === 'content' && event.data) {
                         fullText += event.data;
-                        // 转换为 Codex 原生 SSE 格式
                         res.write(`data: ${JSON.stringify({
-                            type: 'response.output_text.delta',
-                            item_id: outputItemId,
-                            output_index: 0,
-                            content_index: 0,
-                            delta: event.data
+                            type: 'response.output_text.delta', item_id: outputItemId, output_index: 0, content_index: 0, delta: event.data
                         })}\n\n`);
+                    }
+
+                    if (event.type === 'reasoning' && event.data) {
+                        res.write(`data: ${JSON.stringify({
+                            type: 'response.reasoning_summary_text.delta', item_id: outputItemId, output_index: 0, delta: event.data
+                        })}\n\n`);
+                    }
+
+                    if (event.type === 'tool_call_done' && event.data) {
+                        const tc = event.data;
+                        pendingToolCalls.push(tc);
+                        res.write(`data: ${JSON.stringify({
+                            type: 'response.output_item.done', output_index: functionCallIndex,
+                            item: { type: 'function_call', call_id: tc.call_id, name: tc.name, arguments: tc.arguments }
+                        })}\n\n`);
+                        functionCallIndex++;
+                    }
+
+                    if (event.type === 'response.output_item.done' && event.data?.item?.type === 'function_call') {
+                        const item = event.data.item;
+                        if (!pendingToolCalls.find(t => t.call_id === item.call_id)) {
+                            pendingToolCalls.push({ call_id: item.call_id, name: item.name, arguments: item.arguments });
+                            res.write(`data: ${JSON.stringify({
+                                type: 'response.output_item.done', output_index: functionCallIndex,
+                                item: { type: 'function_call', call_id: item.call_id, name: item.name, arguments: item.arguments }
+                            })}\n\n`);
+                            functionCallIndex++;
+                        }
                     }
                 }
 
-                // 发送 response.output_text.done 事件
-                res.write(`data: ${JSON.stringify({
-                    type: 'response.output_text.done',
-                    item_id: outputItemId,
-                    output_index: 0,
-                    content_index: 0,
-                    text: fullText
-                })}\n\n`);
+                if (fullText) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'response.output_text.done', item_id: outputItemId, output_index: 0, content_index: 0, text: fullText
+                    })}\n\n`);
+                    res.write(`data: ${JSON.stringify({
+                        type: 'response.output_item.done', output_index: pendingToolCalls.length,
+                        item: { id: outputItemId, type: 'message', role: 'assistant', content: [{ type: 'output_text', text: fullText }] }
+                    })}\n\n`);
+                }
 
-                // 发送 response.content_part.done 事件
-                res.write(`data: ${JSON.stringify({
-                    type: 'response.content_part.done',
-                    item_id: outputItemId,
-                    output_index: 0,
-                    content_index: 0,
-                    part: { type: 'output_text', text: fullText }
-                })}\n\n`);
+                const outputItems = pendingToolCalls.map(tc => ({ type: 'function_call', call_id: tc.call_id, name: tc.name, arguments: tc.arguments }));
+                if (fullText) {
+                    outputItems.push({ id: outputItemId, type: 'message', role: 'assistant', content: [{ type: 'output_text', text: fullText }] });
+                }
 
-                // 发送 response.output_item.done 事件
-                res.write(`data: ${JSON.stringify({
-                    type: 'response.output_item.done',
-                    output_index: 0,
-                    item: {
-                        id: outputItemId,
-                        type: 'message',
-                        role: 'assistant',
-                        content: [{ type: 'output_text', text: fullText }]
-                    }
-                })}\n\n`);
-
-                // 发送 response.completed 事件（包含必需的 id 字段）
-                const inputTokens = Math.ceil(JSON.stringify(messages).length / 4);
-                const outputTokens = Math.ceil(fullText.length / 4);
                 res.write(`data: ${JSON.stringify({
                     type: 'response.completed',
                     response: {
-                        id: responseId,
-                        object: 'response',
-                        created_at: Math.floor(startTime / 1000),
-                        model: targetModel,
-                        status: 'completed',
-                        output: [{
-                            id: outputItemId,
-                            type: 'message',
-                            role: 'assistant',
-                            content: [{ type: 'output_text', text: fullText }]
-                        }],
-                        usage: {
-                            input_tokens: inputTokens,
-                            output_tokens: outputTokens,
-                            total_tokens: inputTokens + outputTokens
-                        }
+                        id: responseId, object: 'response', created_at: Math.floor(startTime / 1000), model: targetModel, status: 'completed',
+                        output: outputItems,
+                        usage: { input_tokens: Math.ceil(JSON.stringify(messages).length / 4), output_tokens: Math.ceil(fullText.length / 4), total_tokens: Math.ceil((JSON.stringify(messages).length + fullText.length) / 4) }
                     }
                 })}\n\n`);
 
                 res.end();
             } catch (streamError) {
-                console.error(`[Codex] /codex/responses 流式请求错误:`, streamError.message);
-                res.write(`data: ${JSON.stringify({
-                    type: 'error',
-                    error: { message: streamError.message, type: 'server_error' }
-                })}\n\n`);
+                console.error(`[Codex] /codex/responses 流式错误:`, streamError.message);
+                res.write(`data: ${JSON.stringify({ type: 'error', error: { message: streamError.message, type: 'server_error' } })}\n\n`);
                 res.end();
             }
         } catch (error) {
             console.error(`[Codex] /codex/responses 错误:`, error.message);
             if (!res.headersSent) {
-                res.status(500).json({
-                    error: {
-                        message: error.message,
-                        type: 'server_error'
-                    }
-                });
+                res.status(500).json({ error: { message: error.message, type: 'server_error' } });
             } else {
                 res.end();
             }
@@ -556,4 +394,21 @@ export function setupCodexRoutes(app, authMiddleware) {
     });
 
     console.log('[Codex] 路由已设置');
+}
+
+// 从 input 中提取环境变量值
+function extractEnvValue(input, key) {
+    if (!Array.isArray(input)) return undefined;
+    for (const item of input) {
+        if (item.type === 'message' && item.role === 'user' && Array.isArray(item.content)) {
+            for (const c of item.content) {
+                if (c.type === 'input_text' && c.text?.includes('<environment_context>')) {
+                    const regex = new RegExp(`<${key}>([^<]+)</${key}>`);
+                    const match = c.text.match(regex);
+                    if (match) return match[1];
+                }
+            }
+        }
+    }
+    return undefined;
 }
