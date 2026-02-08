@@ -195,16 +195,16 @@ function fallbackCopyToClipboard(text) {
 
 // ============ 侧边栏导航 ============
 function initSidebar(currentPage) {
-    // 设置当前页面高亮
-    document.querySelectorAll('.nav-item').forEach(item => {
+    // 设置当前页面高亮 - 支持一级和二级菜单
+    document.querySelectorAll('.nav-item, .nav-subitem').forEach(item => {
         item.classList.remove('active');
         if (item.dataset.page === currentPage) {
             item.classList.add('active');
         }
     });
 
-    // 导航点击事件
-    document.querySelectorAll('.nav-item').forEach(item => {
+    // 导航点击事件 - 支持一级和二级菜单
+    document.querySelectorAll('.nav-item, .nav-subitem').forEach(item => {
         item.addEventListener('click', (e) => {
             const page = item.dataset.page;
             if (page) {
@@ -215,10 +215,80 @@ function initSidebar(currentPage) {
         });
     });
 
+    // 菜单收缩功能
+    initMenuCollapse();
+
     // 登出按钮
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
+    }
+}
+
+// 初始化菜单收缩功能
+function initMenuCollapse() {
+    // 从localStorage读取收缩状态
+    const collapsedSections = JSON.parse(localStorage.getItem('collapsedSections') || '[]');
+
+    // 为所有可收缩的标题添加点击事件
+    document.querySelectorAll('.nav-subsection-title.collapsible').forEach(title => {
+        const targetId = title.dataset.target;
+        const content = document.getElementById(targetId);
+
+        if (!content) return;
+
+        // 恢复之前的收缩状态
+        if (collapsedSections.includes(targetId)) {
+            title.classList.add('collapsed');
+            content.classList.add('collapsed');
+        }
+
+        // 添加点击事件
+        title.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleMenuSection(targetId);
+        });
+    });
+}
+
+// 切换菜单分组的展开/收缩状态
+function toggleMenuSection(targetId) {
+    const title = document.querySelector(`[data-target="${targetId}"]`);
+    const content = document.getElementById(targetId);
+
+    if (!title || !content) return;
+
+    const isCollapsed = title.classList.contains('collapsed');
+
+    if (isCollapsed) {
+        // 展开
+        title.classList.remove('collapsed');
+        content.classList.remove('collapsed');
+        removeFromCollapsedSections(targetId);
+    } else {
+        // 收缩
+        title.classList.add('collapsed');
+        content.classList.add('collapsed');
+        addToCollapsedSections(targetId);
+    }
+}
+
+// 添加到收缩列表
+function addToCollapsedSections(sectionId) {
+    const collapsedSections = JSON.parse(localStorage.getItem('collapsedSections') || '[]');
+    if (!collapsedSections.includes(sectionId)) {
+        collapsedSections.push(sectionId);
+        localStorage.setItem('collapsedSections', JSON.stringify(collapsedSections));
+    }
+}
+
+// 从收缩列表移除
+function removeFromCollapsedSections(sectionId) {
+    const collapsedSections = JSON.parse(localStorage.getItem('collapsedSections') || '[]');
+    const index = collapsedSections.indexOf(sectionId);
+    if (index > -1) {
+        collapsedSections.splice(index, 1);
+        localStorage.setItem('collapsedSections', JSON.stringify(collapsedSections));
     }
 }
 
@@ -269,188 +339,211 @@ function getSidebarHTML(stats = { total: 0, active: 0, error: 0 }) {
             </div>
         </div>
         <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">账号管理</div>
-                <a href="#" class="nav-item" data-page="accounts">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <!-- 账号管理 -->
+            <div class="nav-subsection">
+                <div class="nav-subsection-title collapsible" data-target="account-management">
+                    <span>账号管理</span>
+                    <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
-                    ${settings.siteName} 账号
-                    <span class="nav-badge" id="nav-accounts-count">${stats.total}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="gemini">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                    </svg>
-                    Gemini 账号
-                    <span class="nav-badge" id="nav-gemini-count">${stats.gemini || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="orchids">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                    Orchids 账号
-                    <span class="nav-badge" id="nav-orchids-count">${stats.orchids || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="ami">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 16v-4"/>
-                        <path d="M12 8h.01"/>
-                    </svg>
-                    AMI 账号
-                    <span class="nav-badge" id="nav-ami-count">${stats.ami || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="warp">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                    </svg>
-                    Warp 账号
-                    <span class="nav-badge" id="nav-warp-count">${stats.warp || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="vertex">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                    Vertex AI
-                    <span class="nav-badge" id="nav-vertex-count">${stats.vertex || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="codex">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                    Codex 账号
-                    <span class="nav-badge" id="nav-codex-count">${stats.codex || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="flow-tokens">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
-                        <line x1="7" y1="2" x2="7" y2="22"/>
-                        <line x1="17" y1="2" x2="17" y2="22"/>
-                        <line x1="2" y1="12" x2="22" y2="12"/>
-                        <line x1="2" y1="7" x2="7" y2="7"/>
-                        <line x1="2" y1="17" x2="7" y2="17"/>
-                        <line x1="17" y1="17" x2="22" y2="17"/>
-                        <line x1="17" y1="7" x2="22" y2="7"/>
-                    </svg>
-                    Flow Token
-                    <span class="nav-badge" id="nav-flow-count">${stats.flow || 0}</span>
-                </a>
-                <a href="#" class="nav-item" data-page="oauth">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                        <polyline points="10 17 15 12 10 7"/>
-                        <line x1="15" y1="12" x2="3" y2="12"/>
-                    </svg>
-                    OAuth 登录
-                </a>
-                <a href="#" class="nav-item" data-page="chat">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    对话测试
-                </a>
-                <a href="#" class="nav-item" data-page="error-accounts">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    异常账号
-                    <span class="nav-badge error" id="nav-error-count">${stats.error}</span>
-                </a>
+                </div>
+                <div class="nav-subsection-content" id="account-management">
+                    <a href="#" class="nav-item nav-subitem" data-page="accounts">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        ${settings.siteName} 账号
+                        <span class="nav-badge" id="nav-accounts-count">${stats.total}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="gemini">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        Gemini 账号
+                        <span class="nav-badge" id="nav-gemini-count">${stats.gemini || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="vertex">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Vertex AI
+                        <span class="nav-badge" id="nav-vertex-count">${stats.vertex || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="codex">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Codex 账号
+                        <span class="nav-badge" id="nav-codex-count">${stats.codex || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="orchids">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        Orchids 账号
+                        <span class="nav-badge" id="nav-orchids-count">${stats.orchids || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="ami">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                        AMI 账号
+                        <span class="nav-badge" id="nav-ami-count">${stats.ami || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="warp">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                        Warp 账号
+                        <span class="nav-badge" id="nav-warp-count">${stats.warp || 0}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="oauth">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        OAuth 登录
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="error-accounts">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        异常账号
+                        <span class="nav-badge error" id="nav-error-count">${stats.error}</span>
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="flow-tokens">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>
+                            <line x1="7" y1="2" x2="7" y2="22"/>
+                            <line x1="17" y1="2" x2="17" y2="22"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <line x1="2" y1="7" x2="7" y2="7"/>
+                            <line x1="2" y1="17" x2="7" y2="17"/>
+                            <line x1="17" y1="17" x2="22" y2="17"/>
+                            <line x1="17" y1="7" x2="22" y2="7"/>
+                        </svg>
+                        Flow Token
+                        <span class="nav-badge" id="nav-flow-count">${stats.flow || 0}</span>
+                    </a>
+                </div>
             </div>
-            <div class="nav-section">
-                <div class="nav-section-title">API 管理</div>
-                <a href="#" class="nav-item" data-page="api-keys">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+
+            <!-- 系统管理 -->
+            <div class="nav-subsection">
+                <div class="nav-subsection-title collapsible" data-target="system-management">
+                    <span>系统管理</span>
+                    <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
-                    API 密钥
-                </a>
-                <a href="#" class="nav-item" data-page="packages">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="9" y1="21" x2="9" y2="9"/>
-                    </svg>
-                    套餐管理
-                </a>
-                <a href="#" class="nav-item" data-page="trial-admin">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="8.5" cy="7" r="4"/>
-                        <polyline points="17 11 19 13 23 9"/>
-                    </svg>
-                    试用审批
-                </a>
-                <a href="#" class="nav-item" data-page="usage">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                    用量统计
-                </a>
+                </div>
+                <div class="nav-subsection-content" id="system-management">
+                    <a href="#" class="nav-item nav-subitem" data-page="api-keys">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                        </svg>
+                        API 密钥
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="packages">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="3" y1="9" x2="21" y2="9"/>
+                            <line x1="9" y1="21" x2="9" y2="9"/>
+                        </svg>
+                        套餐管理
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="usage">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                        用量统计
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="trial-admin">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <polyline points="17 11 19 13 23 9"/>
+                        </svg>
+                        试用审批
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="chat">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        对话测试
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="site-settings">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="3" y1="9" x2="21" y2="9"/>
+                            <line x1="9" y1="21" x2="9" y2="9"/>
+                        </svg>
+                        站点设置
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="pricing">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.768 0-1.536-.22-2.121-.659-1.172-.879-1.172-2.303 0-3.182s3.07-.879 4.242 0L15 8.819"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                        模型定价
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="proxy">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                        代理设置
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="change-password">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        修改密码
+                    </a>
+                </div>
             </div>
-            <div class="nav-section">
-                <div class="nav-section-title">日志</div>
-                <a href="#" class="nav-item" data-page="logs">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
+
+            <!-- 日志监控 -->
+            <div class="nav-subsection">
+                <div class="nav-subsection-title collapsible" data-target="logs-monitoring">
+                    <span>日志监控</span>
+                    <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
-                    请求日志
-                </a>
-                <a href="#" class="nav-item" data-page="error-logs">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    错误日志
-                </a>
-            </div>
-            <div class="nav-section">
-                <div class="nav-section-title">系统设置</div>
-                <a href="#" class="nav-item" data-page="site-settings">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <line x1="3" y1="9" x2="21" y2="9"/>
-                        <line x1="9" y1="21" x2="9" y2="9"/>
-                    </svg>
-                    站点设置
-                </a>
-                <a href="#" class="nav-item" data-page="pricing">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.768 0-1.536-.22-2.121-.659-1.172-.879-1.172-2.303 0-3.182s3.07-.879 4.242 0L15 8.819"/>
-                        <circle cx="12" cy="12" r="10"/>
-                    </svg>
-                    模型定价
-                </a>
-                <a href="#" class="nav-item" data-page="proxy">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                    代理设置
-                </a>
-                <a href="#" class="nav-item" data-page="change-password">
-                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    修改密码
-                </a>
+                </div>
+                <div class="nav-subsection-content" id="logs-monitoring">
+                    <a href="#" class="nav-item nav-subitem" data-page="logs">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        请求日志
+                    </a>
+                    <a href="#" class="nav-item nav-subitem" data-page="error-logs">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        错误日志
+                    </a>
+                </div>
             </div>
         </nav>
         <div class="sidebar-footer">
