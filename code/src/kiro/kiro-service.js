@@ -14,14 +14,20 @@ import { ToolCallLogStore } from '../db.js';
 
 const log = logger.client;
 
-// 工具调用日志存储（延迟初始化）
-let toolCallLogStore = null;
-async function getToolCallLogStore() {
-    if (!toolCallLogStore) {
-        toolCallLogStore = await ToolCallLogStore.create();
+// 工具调用日志存储（延迟初始化，使用 Promise 缓存避免重复创建）
+let toolCallLogStorePromise = null;
+function getToolCallLogStore() {
+    if (!toolCallLogStorePromise) {
+        toolCallLogStorePromise = ToolCallLogStore.create();
     }
-    return toolCallLogStore;
+    return toolCallLogStorePromise;
 }
+
+// 预编译正则表达式（性能优化）
+const REGEX_ILLEGAL_ESCAPE = /\\([^nrtbf\\"\/u0-7])/g;
+const REGEX_INCOMPLETE_UNICODE = /\\u(?![0-9a-fA-F]{4})/g;
+const REGEX_UNESCAPED_NEWLINE = /([^\\])(\r?\n)(?=[^"]*"[,}\]])/g;
+const REGEX_SEARCH_QUERY = /(?:web search for the query:|搜索|search for)[:\s]*(.+)/i;
 
 // MCP 端点 URL
 const MCP_URL_TEMPLATE = 'https://q.{{region}}.amazonaws.com/mcp';
@@ -99,8 +105,6 @@ export class KiroService {
 
         this.axiosInstance = axios.create(axiosConfig);
         this.baseUrl = buildCodeWhispererUrl(KIRO_CONSTANTS.BASE_URL, this.region);
-        // Q Agent URL (用于 WebSearch)
-        this.qAgentUrl = buildCodeWhispererUrl(KIRO_CONSTANTS.Q_AGENT_URL, this.region);
         // MCP URL (用于直接调用工具)
         this.mcpUrl = buildCodeWhispererUrl(MCP_URL_TEMPLATE, this.region);
     }
@@ -417,10 +421,26 @@ export class KiroService {
                                 }
                             };
                         }
+
+                        // 为 Write/Edit 类工具添加限制规则
+                        let description = tool.description || "";
+                        const toolNameLower = tool.name.toLowerCase();
+                        if (toolNameLower.includes('write') || toolNameLower === 'write_to_file') {
+                            const writeLimit = "\n\n**IMPORTANT LIMITS**: Do NOT write more than 200 lines or 3000 characters in a single call. For larger files, split into multiple sequential writes. Always escape special characters properly in JSON (use \\\\n for newlines, \\\\ for backslashes, \\\" for quotes).";
+                            if (!description.includes('IMPORTANT LIMITS')) {
+                                description += writeLimit;
+                            }
+                        } else if (toolNameLower.includes('edit') || toolNameLower === 'str_replace_editor') {
+                            const editLimit = "\n\n**IMPORTANT LIMITS**: Do NOT edit more than 150 lines or 2500 characters in old_string/new_string. For larger changes, split into multiple sequential edits. Always escape special characters properly in JSON.";
+                            if (!description.includes('IMPORTANT LIMITS')) {
+                                description += editLimit;
+                            }
+                        }
+
                         return {
                             toolSpecification: {
                                 name: tool.name,
-                                description: tool.description || "",
+                                description: description,
                                 inputSchema: { json: tool.input_schema || {} }
                             }
                         };
@@ -428,7 +448,7 @@ export class KiroService {
                 };
             }
         }
-        
+
         // 标记是否使用 WebSearch
         this._useWebSearch = hasWebSearch;
 
@@ -641,17 +661,19 @@ export class KiroService {
         let remaining = buffer;
         let searchStart = 0;
 
-        while (true) {
-            const contentStart = remaining.indexOf('{"content":', searchStart);
-            const nameStart = remaining.indexOf('{"name":', searchStart);
-            const followupStart = remaining.indexOf('{"followupPrompt":', searchStart);
-            const inputStart = remaining.indexOf('{"input":', searchStart);
-            const stopStart = remaining.indexOf('{"stop":', searchStart);
+        // 预定义搜索模式（按优先级排序）
+        const patterns = ['{"content":', '{"name":', '{"followupPrompt":', '{"input":', '{"stop":'];
 
-            const candidates = [contentStart, nameStart, followupStart, inputStart, stopStart].filter(pos => pos >= 0);
-            if (candidates.length === 0) break;
+        while (searchStart < remaining.length) {
+            // 一次遍历找到最近的 JSON 起始位置
+            let jsonStart = -1;
+            for (const pattern of patterns) {
+                const pos = remaining.indexOf(pattern, searchStart);
+                if (pos >= 0 && (jsonStart < 0 || pos < jsonStart)) {
+                    jsonStart = pos;
+                }
+            }
 
-            const jsonStart = Math.min(...candidates);
             if (jsonStart < 0) break;
 
             let braceCount = 0;
@@ -728,8 +750,8 @@ export class KiroService {
             
             if (lastMessage) {
                 const content = this.getContentText(lastMessage);
-                // 尝试从 "Perform a web search for the query: XXX" 格式提取
-                const match = content.match(/(?:web search for the query:|搜索|search for)[:\s]*(.+)/i);
+                // 使用预编译正则提取搜索查询
+                const match = content.match(REGEX_SEARCH_QUERY);
                 if (match) {
                     searchQuery = match[1].trim();
                 } else {
@@ -841,15 +863,25 @@ export class KiroService {
                 // 400 ValidationException 处理
                 if (status === 400 && this._isValidationException(error)) {
                     // 打印详细错误信息用于调试
-                    const errorBody = error.response?.data;
                     const errorHeaders = error.response?.headers;
                     console.error('[KiroService] 400 ValidationException 详情:');
                     console.error('  URL:', targetUrl);
                     console.error('  Headers:', JSON.stringify(errorHeaders, null, 2));
-                    if (typeof errorBody === 'string') {
-                        console.error('  Body:', errorBody.substring(0, 1000));
-                    } else {
-                        console.error('  Body:', JSON.stringify(errorBody, null, 2));
+                    // 尝试安全地获取错误体（避免循环引用）
+                    try {
+                        const errorBody = error.response?.data;
+                        if (typeof errorBody === 'string') {
+                            console.error('  Body:', errorBody.substring(0, 1000));
+                        } else if (errorBody && typeof errorBody === 'object') {
+                            // 检查是否是流对象，避免序列化
+                            if (typeof errorBody.pipe === 'function' || errorBody._readableState) {
+                                console.error('  Body: [Stream object - cannot serialize]');
+                            } else {
+                                console.error('  Body:', JSON.stringify(errorBody, null, 2));
+                            }
+                        }
+                    } catch (jsonErr) {
+                        console.error('  Body: [无法序列化]', jsonErr.message);
                     }
                     
                     if (KIRO_CONSTANTS.ENABLE_CONTEXT_COMPRESSION && compressionLevel < 3) {
@@ -867,9 +899,14 @@ export class KiroService {
                     }
                 }
 
-                if ((status === 429 || (status >= 500 && status < 600)) && retryCount < maxRetries) {
+                // 检查是否是签名错误 (403 SignatureDoesNotMatch)，可以重试
+                const errorType = error.response?.headers?.['x-amzn-errortype'] || '';
+                const isSignatureError = status === 403 && errorType.includes('SignatureDoesNotMatch');
+
+                if ((status === 429 || (status >= 500 && status < 600) || isSignatureError) && retryCount < maxRetries) {
                     const delay = baseDelay * Math.pow(2, retryCount);
-                    console.log(`[KiroService] 收到 ${status}，${delay}ms 后重试... (${retryCount + 1}/${maxRetries})`);
+                    const reason = isSignatureError ? '签名错误' : status;
+                    console.log(`[KiroService] 收到 ${reason}，${delay}ms 后重试... (${retryCount + 1}/${maxRetries})`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     retryCount++;
                     continue;
@@ -878,9 +915,9 @@ export class KiroService {
                 let errorMessage = error.message;
                 if (error.response) {
                     errorMessage = `Request failed with status code ${status}`;
-                    const errorType = error.response.headers?.['x-amzn-errortype'];
+                    const errorTypeHeader = error.response.headers?.['x-amzn-errortype'];
                     const requestId = error.response.headers?.['x-amzn-requestid'];
-                    if (errorType) errorMessage += ` | ErrorType: ${errorType}`;
+                    if (errorTypeHeader) errorMessage += ` | ErrorType: ${errorTypeHeader}`;
                     if (requestId) errorMessage += ` | RequestId: ${requestId}`;
                 }
 
@@ -915,7 +952,7 @@ export class KiroService {
             
             if (lastMessage) {
                 const content = this.getContentText(lastMessage);
-                const match = content.match(/(?:web search for the query:|搜索|search for)[:\s]*(.+)/i);
+                const match = content.match(REGEX_SEARCH_QUERY);
                 if (match) {
                     searchQuery = match[1].trim();
                 } else {
@@ -998,15 +1035,24 @@ export class KiroService {
                 // 400 ValidationException 处理
                 if (status === 400 && this._isValidationException(error)) {
                     // 打印详细错误信息用于调试
-                    const errorBody = error.response?.data;
                     const errorHeaders = error.response?.headers;
                     console.error('[KiroService] 400 ValidationException 详情 (非流式):');
                     console.error('  URL:', targetUrl);
                     console.error('  Headers:', JSON.stringify(errorHeaders, null, 2));
-                    if (typeof errorBody === 'string') {
-                        console.error('  Body:', errorBody.substring(0, 1000));
-                    } else {
-                        console.error('  Body:', JSON.stringify(errorBody, null, 2));
+                    // 尝试安全地获取错误体（避免循环引用）
+                    try {
+                        const errorBody = error.response?.data;
+                        if (typeof errorBody === 'string') {
+                            console.error('  Body:', errorBody.substring(0, 1000));
+                        } else if (errorBody && typeof errorBody === 'object') {
+                            if (typeof errorBody.pipe === 'function' || errorBody._readableState) {
+                                console.error('  Body: [Stream object - cannot serialize]');
+                            } else {
+                                console.error('  Body:', JSON.stringify(errorBody, null, 2));
+                            }
+                        }
+                    } catch (jsonErr) {
+                        console.error('  Body: [无法序列化]', jsonErr.message);
                     }
                     
                     if (KIRO_CONSTANTS.ENABLE_CONTEXT_COMPRESSION && compressionLevel < 3) {
@@ -1023,9 +1069,14 @@ export class KiroService {
                     }
                 }
 
-                if ((status === 429 || (status >= 500 && status < 600)) && retryCount < maxRetries) {
+                // 检查是否是签名错误 (403 SignatureDoesNotMatch)，可以重试
+                const errorType = error.response?.headers?.['x-amzn-errortype'] || '';
+                const isSignatureError = status === 403 && errorType.includes('SignatureDoesNotMatch');
+
+                if ((status === 429 || (status >= 500 && status < 600) || isSignatureError) && retryCount < maxRetries) {
                     const delay = baseDelay * Math.pow(2, retryCount);
-                    console.log(`[KiroService] 收到 ${status}，${delay}ms 后重试... (${retryCount + 1}/${maxRetries})`);
+                    const reason = isSignatureError ? '签名错误' : status;
+                    console.log(`[KiroService] 收到 ${reason}，${delay}ms 后重试... (${retryCount + 1}/${maxRetries})`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     retryCount++;
                     continue;
@@ -1034,9 +1085,9 @@ export class KiroService {
                 let errorMessage = error.message;
                 if (error.response) {
                     errorMessage = `Request failed with status code ${status}`;
-                    const errorType = error.response.headers?.['x-amzn-errortype'];
+                    const errorTypeHeader = error.response.headers?.['x-amzn-errortype'];
                     const requestId = error.response.headers?.['x-amzn-requestid'];
-                    if (errorType) errorMessage += ` | ErrorType: ${errorType}`;
+                    if (errorTypeHeader) errorMessage += ` | ErrorType: ${errorTypeHeader}`;
                     if (requestId) errorMessage += ` | RequestId: ${requestId}`;
                 }
 
@@ -1054,10 +1105,10 @@ export class KiroService {
         try {
             input = JSON.parse(toolCall.input);
 
-            // 对 Write/Edit 工具进行内容大小检查和警告（仅在非常大时警告）
+            // 对 Write/Edit 工具进行内容大小检查和警告
             if (toolCall.name === 'Write' && input.content) {
                 const contentLength = input.content.length;
-                if (contentLength > 50000) {  // 提高到 50000 字符
+                if (contentLength > 3000) {  // 降低到 3000 字符，与工具描述中的限制一致
                     const message = `Write 内容过大 (${contentLength} 字符)，可能导致写入失败，建议分块写入`;
                     log.warn(`[工具调用] ${message}`);
                     // 异步写入数据库日志
@@ -1066,7 +1117,7 @@ export class KiroService {
             }
             if (toolCall.name === 'Edit' && input.new_string) {
                 const newStringLength = input.new_string.length;
-                if (newStringLength > 50000) {  // 提高到 50000 字符
+                if (newStringLength > 2500) {  // 降低到 2500 字符，与工具描述中的限制一致
                     const message = `Edit new_string 过大 (${newStringLength} 字符)，可能导致写入失败`;
                     log.warn(`[工具调用] ${message}`);
                     // 异步写入数据库日志
@@ -1074,15 +1125,53 @@ export class KiroService {
                 }
             }
         } catch (e) {
-            // JSON 解析失败，记录警告
-            if (toolCall.input && toolCall.input.length > 100) {
-                const message = `${toolCall.name} 输入 JSON 解析失败: ${e.message}`;
-                log.warn(`[工具调用] ${message}`);
-                // 异步写入数据库日志
-                this._logToolCallToDb('ERROR', toolCall, message, inputSize);
+            // JSON 解析失败，尝试自动修复
+            const originalError = e.message;
+            let fixed = false;
+            let fixedInput = toolCall.input;
+
+            try {
+                // 尝试修复常见的 JSON 转义错误
+                fixedInput = this._tryFixJsonEscaping(fixedInput);
+                input = JSON.parse(fixedInput);
+                fixed = true;
+                log.info(`[工具调用] ${toolCall.name} JSON 自动修复成功`);
+            } catch (e2) {
+                // 修复失败，记录警告
+                if (toolCall.input && toolCall.input.length > 100) {
+                    const message = `${toolCall.name} 输入 JSON 解析失败: ${originalError}`;
+                    log.warn(`[工具调用] ${message}`);
+                    // 异步写入数据库日志
+                    this._logToolCallToDb('ERROR', toolCall, message, inputSize);
+                }
             }
         }
         return { toolUseId: toolCall.toolUseId, name: toolCall.name, input };
+    }
+
+    /**
+     * 尝试修复常见的 JSON 转义错误
+     */
+    _tryFixJsonEscaping(jsonStr) {
+        if (!jsonStr || typeof jsonStr !== 'string') return jsonStr;
+
+        let fixed = jsonStr;
+
+        // 修复非法的转义序列（使用预编译正则）
+        fixed = fixed.replace(REGEX_ILLEGAL_ESCAPE, (match, char) => {
+            if (char === 'x') {
+                return '\\\\x';
+            }
+            return '\\\\' + char;
+        });
+
+        // 修复不完整的 \u 转义
+        fixed = fixed.replace(REGEX_INCOMPLETE_UNICODE, '\\\\u');
+
+        // 修复字符串中未转义的换行符
+        fixed = fixed.replace(REGEX_UNESCAPED_NEWLINE, '$1\\n');
+
+        return fixed;
     }
 
     /**
